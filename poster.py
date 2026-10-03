@@ -18,14 +18,27 @@ def tex(name, body):
     subprocess.run(['lualatex', '-interaction=nonstopmode', '-output-directory=build', f'build/{name}.tex'], check=True, capture_output=True)
     return f'build/{name}.pdf'
 
-def rule(p):
-    n, m = p['n'], p['m']
-    digits = f'1〜{n-1} を、数字 $d$ はちょうど $d$ 個ずつ使う（0 は使わない）' if m == 'tri' else f'0〜{n-1} を各 {m} 個ずつ使う'
-    base = '' if n == 10 else f'{n} 進数の筆算。'
-    extra = ''
-    if p['op'][0] == '/': extra = '最後の行はあまり。枠のない 0 は数えない。'
-    if p['op'] == '*' and '@' in p['shape']: extra = 'かける数に 0 の桁があるとき、その部分積の行は書かない。'
-    return f'{base}□ には数字が 1 つずつ入る。{digits}。いちばん左の桁は 0 ではない。{extra}答えは 1 つ。'
+def rule(p):  # ルール文 (日本語, 英語)。LaTeX の数式で書く（Web では uni() で Unicode にする）
+    n, m, op = p['n'], p['m'], p['op']
+    D = rf'$\{{{1 if m == "tri" else 0},1,\dots,{n-1}\}}$'.replace(r'\{1,1,', r'\{1,')
+    ja = f'各 □ に {D} の元を 1 つずつ入れ、{n} 進法で正しい{ {"+": "足し算", "*": "掛け算", "/": "割り算"}[op[0]] }の筆算を完成させよ。'
+    en = f'Fill each □ with a digit in {D} so that the { {"+": "addition", "*": "long multiplication", "/": "long division"}[op[0]] } is correct in base {n}. '
+    if m == 'tri':
+        ja += f'数字 $d$ はちょうど $d$ 回使う（$1 \\le d \\le {n-1}$）。'; en += f'Each digit $d$ is used exactly $d$ times ($1 \\le d \\le {n-1}$). '
+    elif m == 1:
+        ja += f'□ は {n} 個あり、各数字をちょうど 1 回ずつ使う（□ と数字の全単射）。'; en += f'Each digit is used exactly once (a bijection between the {n} boxes and the digits). '
+    else:
+        ja += f'各数字をちょうど {m} 回ずつ使う（□ は ${m} \\times {n} = {m*n}$ 個）。'; en += f'Each digit is used exactly {m} times (${m} \\times {n} = {m*n}$ boxes). '
+    ja += '各数の最上位桁は 0 でない。'; en += 'Leading digits are nonzero. '
+    if op[0] == '/':
+        ja += '最下行は剰余。枠のない 0 は □ に数えない。'; en += 'The bottom row is the remainder; an unboxed 0 is not a box. '
+    if op == '*' and '@' in p['shape']:
+        ja += '乗数に 0 の桁があれば、対応する部分積の行は省く。'; en += 'Partial products for zero digits of the multiplier are omitted. '
+    return ja + '解は一意である。', en + 'The solution is unique.'
+
+def uni(t):  # Web 用に LaTeX の数式を Unicode に
+    for a, b in [(r'\{', '{'), (r'\}', '}'), (r'\dots', '…'), (r'\le', '≤'), (r'\times', '×'), ('$', '')]: t = t.replace(a, b)
+    return html.escape(t)
 
 def svg(name, p, ans):  # 問題・答えの図を SVG に
     # standalone.cls が無いので、図の箱の大きさにページを合わせて直接出す
@@ -47,7 +60,7 @@ def poster(i):
     qr = segno.make(url, error='m'); qr.save(f'build/qr-{no}.pdf', scale=10, border=4)  # まわりの白 4 マスは規格で要る
     qz = 40 * 4 / qr.symbol_size(border=4)[0]  # 白 4 マスの幅（mm）。黒い部分の端を余白線にそろえるのに使う
     rows = max(r for _, r, _ in layout(p)[0]) + 1
-    s = min(16 / width(p), 14 / (rows * H))  # 図全体（× も）を幅 16cm・高さ 14cm に収まるまで拡大
+    s = min(16 / width(p), 12 / (rows * H))  # 図全体（× も）を幅 16cm・高さ 12cm に収まるまで拡大（説明文が 6 行でも 1 枚に入る高さ）
     body = r'''\documentclass[a4paper]{ltjsarticle}
 \usepackage[margin=15mm]{geometry}\usepackage{tikz,graphicx}\pagestyle{empty}
 \begin{document}\sffamily\setlength{\parindent}{0pt}
@@ -58,7 +71,7 @@ def poster(i):
 
 \vfill
 %% 中: ルール文と問題
-{\large %s}\par\vspace{8mm}
+{\large %s}\par\medskip %s\par\vspace{8mm}
 \begin{center}\scalebox{%.2f}{%s}\end{center}
 
 \vfill
@@ -67,13 +80,13 @@ def poster(i):
 \leavevmode\raisebox{-.5\height}{\includegraphics[height=36mm]{%s}}\hfill
 \raisebox{-.5\height}{\begin{tabular}[b]{@{}c@{}}\small 過去の問題と答え\\[1mm]\footnotesize %s\end{tabular}}\hfill
 \raisebox{-.5\height}{\includegraphics[height=13mm]{%s}}\par\kern0pt  %% 下に出る深さも本文の高さに入れて、下の余白にはみ出さない
-\end{document}''' % (no, i['title'], qz, no, qz, qz, rule(p), s, pic(p, False, 1), crop('labo'), URL, crop('jaist'))
+\end{document}''' % (no, i['title'], qz, no, qz, qz, *rule(p), s, pic(p, False, 1), crop('labo'), URL, crop('jaist'))
     os.replace(tex(f'poster-{no}', body), f'posters/第{no}回.pdf')
     svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
     os.makedirs(str(no), exist_ok=True)
     open(f'{no}/index.html', 'w').write(page(f'No.{no} {i["title"]}', f'''
 <p class="meta">{i["date"]} ・ {OPN[p["op"]]}</p>
-<p>{html.escape(rule(p).replace("$", ""))}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
+<p>{uni(rule(p)[0])}</p><p lang="en">{uni(rule(p)[1])}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
 <details><summary>答えを見る</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>
 <p><a href="../">過去の問題一覧へ</a></p>''', '../'))
 
