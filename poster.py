@@ -64,7 +64,7 @@ def poster(i):
 %% 上: 回の番号と答えの QR（N の左の隙間 1.15mm を詰める）。文字の上端と QR の黒い部分の上端・右端を余白線にそろえる
 \vspace*{-\topskip}\leavevmode\kern-1.15mm\raisebox{-\height}{\bfseries{\fontsize{48}{56}\selectfont No.%d}\quad{\fontsize{30}{36}\selectfont %s}}\hfill
 \raisebox{\dimexpr-\height+%.2fmm}{\begin{minipage}[t]{40mm}\centering
-\includegraphics[width=40mm]{build/qr-%d.pdf}\par\vspace{-%.2fmm}\vspace{1.5mm}{\large\bfseries 答えはこちら}\end{minipage}}\hspace{-%.2fmm}
+\includegraphics[width=40mm]{build/qr-%d.pdf}\par\vspace{-%.2fmm}\vspace{1.5mm}{\large\bfseries Answer}\end{minipage}}\hspace{-%.2fmm}
 
 \vfill
 %% 中: ルール文と問題
