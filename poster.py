@@ -57,10 +57,10 @@ def poster(i):
     os.replace(tex(f'poster-{no}', body), f'posters/第{no}回.pdf')
     svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
     os.makedirs(str(no), exist_ok=True)
-    open(f'{no}/index.html', 'w').write(page(f'No.{no} の答え', f'''
+    open(f'{no}/index.html', 'w').write(page(f'No.{no}', f'''
 <p class="meta">{i["date"]} ・ Lv.{level(p)} ・ {OPN[p["op"]]}</p>
-<h2>答え</h2><img src="../img/{no}-a.svg" alt="No.{no} の答え">
-<h2>問題</h2><p>{html.escape(rule(p).replace("$", ""))}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
+<p>{html.escape(rule(p).replace("$", ""))}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
+<details><summary>答えを見る</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>
 <p><a href="../">過去の問題一覧へ</a></p>''', '../'))
 
 def page(title, body, root):
@@ -68,8 +68,8 @@ def page(title, body, root):
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{title} | {CLUB}</title>
 <style>body{{font-family:system-ui,sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#222;background:#fff}}
 header{{display:flex;justify-content:space-between;align-items:center;gap:16px}}header img{{height:56px}}
-img{{max-width:100%;height:auto}}a{{color:#c00}}.meta{{color:#666}}
-li{{margin:12px 0}}ul{{list-style:none;padding:0}}</style></head><body>
+img{{max-width:100%;height:auto}}img[src$=".svg"]{{display:block;width:min(100%,360px);margin:16px auto}}a{{color:#c00}}.meta{{color:#666}}
+li{{margin:12px 0}}summary{{display:inline-block;margin:24px 0 12px;padding:12px 24px;border-radius:8px;background:#c00;color:#fff;font-weight:bold;cursor:pointer;list-style:none}}summary::-webkit-details-marker{{display:none}}details[open] summary{{background:#888}}ul{{list-style:none;padding:0}}</style></head><body>
 <header><img src="{root}logos/labo.png" alt="{CLUB}"><img src="{root}logos/jaist.png" alt="JAIST" style="height:28px"></header>
 <h1>{title}</h1>{body}</body></html>'''
 
