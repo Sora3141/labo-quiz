@@ -28,10 +28,10 @@ def layout(p):
         put(a,-1,0); put(b,-1,1)
         rows=[(c,0)] if not parts else list(zip(parts,offs))+[(c,0)]
         W=max([len(a),len(b)+1]+[len(s)+o for s,o in rows])
-        marks.append(r'\node at (%.2f,%.2f) {$%s$};'%(-W-0.5,-H*1+0.5,sym))  # 記号はいちばん左の桁のさらに 1 つ左
-        lines.append((-W,0,1)); row=2
+        marks.append(r'\node at (%.2f,%.2f) {$%s$};'%(-W-0.5,-H*1+0.5,sym))  # 記号はいちばん左の桁のさらに 1 つ左。線もその下まで
+        lines.append((-W-1,0,1)); row=2
         for i,(s,o) in enumerate(rows):
-            if parts and i==len(rows)-1: lines.append((-W,0,row-1))
+            if parts and i==len(rows)-1: lines.append((-W-1,0,row-1))
             put(s,-1-o,row); row+=1
         return cells,lines,marks
     m=re.match(r'(\d+)÷(\d+)=(\d+)(?:…\d+)? \|(.*)',r); D,a,q,rest=m.groups(); steps=rest.split()
