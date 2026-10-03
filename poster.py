@@ -68,7 +68,7 @@ def poster(i):
 
 \vfill
 %% 中: ルール文と問題
-{\large %s}\par\medskip %s\par\vspace{8mm}
+{\large %s\par\medskip %s\par}\vspace{8mm}
 \begin{center}\scalebox{%.2f}{%s}\end{center}
 
 \vfill
