@@ -26,11 +26,9 @@ def rule(p):  # ルール文 (日本語, 英語)。LaTeX の数式で書く（We
     if m == 'tri':
         ja += f'数字 $d$ はちょうど $d$ 回使う（$1 \\le d \\le {n-1}$）。'; en += f'Each digit $d$ is used exactly $d$ times ($1 \\le d \\le {n-1}$). '
     elif m != 1:
-        ja += f'各数字をちょうど {m} 回ずつ使う（□ は ${m} \\times {n} = {m*n}$ 個）。'; en += f'Each digit is used exactly {m} times (${m} \\times {n} = {m*n}$ boxes). '
+        ja += f'各数字をちょうど {m} 回ずつ使う。'; en += f'Each digit is used exactly {m} times. '
     if op[0] == '/':
         ja += '最下行は剰余。枠のない 0 は □ に数えない。'; en += 'The bottom row is the remainder; an unboxed 0 is not a box. '
-    if op == '*' and '@' in p['shape']:
-        ja += '乗数に 0 の桁があれば、対応する部分積の行は省く。'; en += 'Partial products for zero digits of the multiplier are omitted. '
     return ja + '解は一意である。', en + 'The solution is unique.'
 
 def uni(t):  # Web 用に LaTeX の数式を Unicode に
