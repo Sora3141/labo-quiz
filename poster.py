@@ -6,7 +6,7 @@
 #         uv run poster.py 3    → posters/第3回.pdf と 3/index.html、一覧の index.html
 #         uv run poster.py      → 全部の回を作り直す
 import json, os, subprocess, sys, html, segno
-from make import P, level, pic, width, layout, OPN, H
+from make import P, pic, width, layout, OPN, H
 
 URL = 'https://sora3141.github.io/labo-quiz/'
 CLUB = 'らぼらとらい'
@@ -58,7 +58,7 @@ def poster(i):
     svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
     os.makedirs(str(no), exist_ok=True)
     open(f'{no}/index.html', 'w').write(page(f'No.{no}', f'''
-<p class="meta">{i["date"]} ・ Lv.{level(p)} ・ {OPN[p["op"]]}</p>
+<p class="meta">{i["date"]} ・ {OPN[p["op"]]}</p>
 <p>{html.escape(rule(p).replace("$", ""))}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
 <details><summary>答えを見る</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>
 <p><a href="../">過去の問題一覧へ</a></p>''', '../'))
@@ -76,6 +76,6 @@ li{{margin:12px 0}}summary{{display:inline-block;margin:24px 0 12px;padding:12px
 for i in issues:
     if not sys.argv[1:] or str(i['no']) in sys.argv[1:]:
         poster(i); print(f'posters/第{i["no"]}回.pdf')
-items = ''.join(f'<li><a href="{i["no"]}/">No.{i["no"]}</a>　<span class="meta">{i["date"]} ・ Lv.{level(P[i["problem"]])} ・ {OPN[P[i["problem"]]["op"]]}</span></li>'
+items = ''.join(f'<li><a href="{i["no"]}/">No.{i["no"]}</a>　<span class="meta">{i["date"]} ・ {OPN[P[i["problem"]]["op"]]}</span></li>'
                 for i in reversed(issues))
 open('index.html', 'w').write(page('過去の問題', f'<p>{CLUB}（JAIST）が掲示板に貼っている問題の一覧です。</p><ul>{items}</ul>', ''))
