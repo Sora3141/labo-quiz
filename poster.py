@@ -84,7 +84,7 @@ def poster(i):
     open(f'{no}/index.html', 'w').write(page(f'No.{no} {i["title"]}', f'''
 <p class="meta">{i["date"]} ・ {OPN[p["op"]]}</p>
 <p>{uni(rule(p)[0])}</p><p lang="en">{uni(rule(p)[1])}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
-<details><summary>答えを見る</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>
+<details><summary>Answer</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>
 <p><a href="../">過去の問題一覧へ</a></p>''', '../'))
 
 def page(title, body, root):
