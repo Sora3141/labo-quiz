@@ -1,5 +1,5 @@
 # /// script
-# dependencies = ["segno"]
+# dependencies = ["segno", "pillow"]
 # ///
 # 掲示用の PDF と Web ページを作る
 # 使い方: issues.json に {"no": 回, "problem": 問題番号, "date": "YYYY-MM-DD"} を足してから
@@ -35,25 +35,39 @@ def svg(name, p, ans):  # 問題・答えの図を SVG に
 \end{document}''' % pic(p, ans, 0.6))
     subprocess.run(['pdftocairo', '-svg', pdf, f'img/{name}.svg'], check=True)
 
+def crop(name):  # ロゴの描画部分だけを切り抜く（logos/ の元画像はそのまま）
+    from PIL import Image
+    im = Image.open(f'logos/{name}.png').convert('RGBA')
+    flat = Image.alpha_composite(Image.new('RGBA', im.size, 'white'), im).convert('RGB')
+    flat.crop(flat.convert('L').point(lambda v: 255 if v < 245 else 0).getbbox()).save(f'build/{name}.png')
+    return f'build/{name}.png'
+
 def poster(i):
     p = P[i['problem']]; no = i['no']; url = f'{URL}{no}/'
-    segno.make(url, error='m').save(f'build/qr-{no}.pdf', scale=10, border=4)  # まわりの白 4 マスは規格で要る
+    qr = segno.make(url, error='m'); qr.save(f'build/qr-{no}.pdf', scale=10, border=4)  # まわりの白 4 マスは規格で要る
+    qz = 40 * 4 / qr.symbol_size(border=4)[0]  # 白 4 マスの幅（mm）。黒い部分の端を余白線にそろえるのに使う
     rows = max(r for _, r, _ in layout(p)[0]) + 1
     s = min(16 / width(p), 14 / (rows * H))  # 図全体（× も）を幅 16cm・高さ 14cm に収まるまで拡大
     body = r'''\documentclass[a4paper]{ltjsarticle}
 \usepackage[margin=15mm]{geometry}\usepackage{tikz,graphicx}\pagestyle{empty}
-\begin{document}\sffamily
-\noindent\raisebox{-\height}{\fontsize{48}{56}\selectfont\bfseries No.%d}\hfill
-\begin{minipage}[t]{40mm}\centering\vspace{0pt}\includegraphics[width=40mm]{build/qr-%d.pdf}\par\small 答え\end{minipage}
+\begin{document}\sffamily\setlength{\parindent}{0pt}
+%% 上: 回の番号と答えの QR（N の左の隙間 1.15mm を詰める）。文字の上端と QR の黒い部分の上端・右端を余白線にそろえる
+\vspace*{-\topskip}\leavevmode\kern-1.15mm\raisebox{-\height}{\fontsize{48}{56}\selectfont\bfseries No.%d}\hfill
+\raisebox{\dimexpr-\height+%.2fmm}{\begin{minipage}[t]{40mm}\centering
+\includegraphics[width=40mm]{build/qr-%d.pdf}\par\vspace{-%.2fmm}\vspace{1.5mm}{\large\bfseries 答えはこちら}\end{minipage}}\hspace{-%.2fmm}
 
-\vspace{6mm}\noindent{\large %s}
+\vfill
+%% 中: ルール文と問題
+{\large %s}\par\vspace{8mm}
+\begin{center}\scalebox{%.2f}{%s}\end{center}
 
-\vfill\begin{center}\scalebox{%.2f}{%s}\end{center}\vfill
-
-\begin{center}\footnotesize 過去の問題: %s\end{center}
-\noindent\raisebox{-.5\height}{\includegraphics[height=48mm]{logos/labo.png}}\hfill
-\raisebox{-.5\height}{\includegraphics[width=65mm]{logos/jaist.png}}
-\end{document}''' % (no, no, rule(p), s, pic(p, False, 1), URL)
+\vfill
+%% 下: 出した側の帯。2 つのロゴは見た目の重さが合う高さ、縦の中心をそろえる
+\rule{\linewidth}{0.4pt}\par\vspace{6mm}
+\leavevmode\raisebox{-.5\height}{\includegraphics[height=36mm]{%s}}\hfill
+\raisebox{-.5\height}{\begin{tabular}[b]{@{}c@{}}\small 過去の問題と答え\\[1mm]\footnotesize %s\end{tabular}}\hfill
+\raisebox{-.5\height}{\includegraphics[height=13mm]{%s}}\par\kern0pt  %% 下に出る深さも本文の高さに入れて、下の余白にはみ出さない
+\end{document}''' % (no, qz, no, qz, qz, rule(p), s, pic(p, False, 1), crop('labo'), URL, crop('jaist'))
     os.replace(tex(f'poster-{no}', body), f'posters/第{no}回.pdf')
     svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
     os.makedirs(str(no), exist_ok=True)
