@@ -50,10 +50,9 @@ def poster(i):
 
 \vfill\begin{center}\scalebox{%.2f}{%s}\end{center}\vfill
 
-\noindent\raisebox{-.5\height}{\includegraphics[height=48mm]{logos/labo.png}}\hfill
-\raisebox{-.5\height}{\includegraphics[width=85mm]{logos/jaist.png}}
-
 \begin{center}\footnotesize 過去の問題: %s\end{center}
+\noindent\raisebox{-.5\height}{\includegraphics[height=48mm]{logos/labo.png}}\hfill
+\raisebox{-.5\height}{\includegraphics[width=65mm]{logos/jaist.png}}
 \end{document}''' % (no, no, rule(p), s, pic(p, False, 1), URL)
     os.replace(tex(f'poster-{no}', body), f'posters/第{no}回.pdf')
     svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
