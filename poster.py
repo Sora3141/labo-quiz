@@ -20,9 +20,9 @@ def tex(name, body):
 
 def rule(p):  # ルール文 (日本語, 英語)。LaTeX の数式で書く（Web では uni() で Unicode にする）
     n, m, op = p['n'], p['m'], p['op']
-    D = rf'$\{{{1 if m == "tri" else 0},1,\dots,{n-1}\}}$'.replace(r'\{1,1,', r'\{1,')
-    ja = (f'{D} の数字を 1 つずつ □ に入れ、' if m == 1 else f'各 □ に {D} の数字を 1 つ入れ、') + f'{n} 進法で正しい{ {"+": "足し算", "*": "掛け算", "/": "割り算"}[op[0]] }の筆算を完成させよ。'
-    en = (f'Place each digit of {D} in one □' if m == 1 else f'Fill each □ with a digit in {D}') + f' so that the { {"+": "addition", "*": "long multiplication", "/": "long division"}[op[0]] } is correct in base {n}. '
+    D = '$' + ','.join(map(str, range(1 if m == 'tri' else 0, n))) + '$'  # 使う数字を全部並べる（例: 0,1,…,6）
+    ja = (f'{D} を 1 つずつ □ に入れ、' if m == 1 else f'各 □ に {D} のどれかを入れ、') + f'{n} 進法で正しい{ {"+": "足し算", "*": "掛け算", "/": "割り算"}[op[0]] }の筆算を完成させよ。'
+    en = (f'Place each of {D} in one □' if m == 1 else f'Fill each □ with one of {D}') + f' so that the { {"+": "addition", "*": "long multiplication", "/": "long division"}[op[0]] } is correct in base {n}. '
     if m == 'tri':
         ja += f'数字 $d$ はちょうど $d$ 回使う（$1 \\le d \\le {n-1}$）。'; en += f'Each digit $d$ is used exactly $d$ times ($1 \\le d \\le {n-1}$). '
     elif m != 1:
