@@ -2,7 +2,7 @@
 # dependencies = ["segno", "pillow"]
 # ///
 # 掲示用の PDF と Web ページを作る
-# 使い方: issues.json に {"no": 回, "problem": 問題番号, "date": "YYYY-MM-DD"} を足してから
+# 使い方: issues.json に {"no": 回, "title": "虫食い算", "problem": 問題番号, "date": "YYYY-MM-DD"} を足してから
 #         uv run poster.py 3    → posters/第3回.pdf と 3/index.html、一覧の index.html
 #         uv run poster.py      → 全部の回を作り直す
 import json, os, subprocess, sys, html, segno
@@ -52,7 +52,7 @@ def poster(i):
 \usepackage[margin=15mm]{geometry}\usepackage{tikz,graphicx}\pagestyle{empty}
 \begin{document}\sffamily\setlength{\parindent}{0pt}
 %% 上: 回の番号と答えの QR（N の左の隙間 1.15mm を詰める）。文字の上端と QR の黒い部分の上端・右端を余白線にそろえる
-\vspace*{-\topskip}\leavevmode\kern-1.15mm\raisebox{-\height}{\fontsize{48}{56}\selectfont\bfseries No.%d}\hfill
+\vspace*{-\topskip}\leavevmode\kern-1.15mm\raisebox{-\height}{\bfseries{\fontsize{48}{56}\selectfont No.%d}\quad{\fontsize{30}{36}\selectfont %s}}\hfill
 \raisebox{\dimexpr-\height+%.2fmm}{\begin{minipage}[t]{40mm}\centering
 \includegraphics[width=40mm]{build/qr-%d.pdf}\par\vspace{-%.2fmm}\vspace{1.5mm}{\large\bfseries 答えはこちら}\end{minipage}}\hspace{-%.2fmm}
 
@@ -67,11 +67,11 @@ def poster(i):
 \leavevmode\raisebox{-.5\height}{\includegraphics[height=36mm]{%s}}\hfill
 \raisebox{-.5\height}{\begin{tabular}[b]{@{}c@{}}\small 過去の問題と答え\\[1mm]\footnotesize %s\end{tabular}}\hfill
 \raisebox{-.5\height}{\includegraphics[height=13mm]{%s}}\par\kern0pt  %% 下に出る深さも本文の高さに入れて、下の余白にはみ出さない
-\end{document}''' % (no, qz, no, qz, qz, rule(p), s, pic(p, False, 1), crop('labo'), URL, crop('jaist'))
+\end{document}''' % (no, i['title'], qz, no, qz, qz, rule(p), s, pic(p, False, 1), crop('labo'), URL, crop('jaist'))
     os.replace(tex(f'poster-{no}', body), f'posters/第{no}回.pdf')
     svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
     os.makedirs(str(no), exist_ok=True)
-    open(f'{no}/index.html', 'w').write(page(f'No.{no}', f'''
+    open(f'{no}/index.html', 'w').write(page(f'No.{no} {i["title"]}', f'''
 <p class="meta">{i["date"]} ・ {OPN[p["op"]]}</p>
 <p>{html.escape(rule(p).replace("$", ""))}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
 <details><summary>答えを見る</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>
@@ -90,6 +90,6 @@ li{{margin:12px 0}}summary{{display:inline-block;margin:24px 0 12px;padding:12px
 for i in issues:
     if not sys.argv[1:] or str(i['no']) in sys.argv[1:]:
         poster(i); print(f'posters/第{i["no"]}回.pdf')
-items = ''.join(f'<li><a href="{i["no"]}/">No.{i["no"]}</a>　<span class="meta">{i["date"]} ・ {OPN[P[i["problem"]]["op"]]}</span></li>'
+items = ''.join(f'<li><a href="{i["no"]}/">No.{i["no"]} {i["title"]}</a>　<span class="meta">{i["date"]} ・ {OPN[P[i["problem"]]["op"]]}</span></li>'
                 for i in reversed(issues))
 open('index.html', 'w').write(page('過去の問題', f'<p>{CLUB}（JAIST）が掲示板に貼っている問題の一覧です。</p><ul>{items}</ul>', ''))
