@@ -9,9 +9,9 @@ def level(p):  # ソルバーの当てずっぽうの回数で 5 段階
     return 1+sum(G[p['no']]>t for t in (2,20,200,3000))
 nos=[]
 for a in (sys.argv[1:] if __name__=='__main__' else []):
-    nos+= [k for k in sorted(P) if level(P[k])==int(a[2:])] if a.lower().startswith('lv') else [int(a)]
-nos=nos or sorted(P)
-OPN={'+':'足し算','*':'掛け算','/':'割り算','/0':'割り算（割り切れる）','/r':'割り算（あまりあり）'}
+    nos+= [k for k in sorted(P) if k in G and level(P[k])==int(a[2:])] if a.lower().startswith('lv') else [int(a)]
+nos=nos or [k for k in sorted(P) if k in G]  # ソルバーで測れない形（op 'x'）は一覧に入れない
+OPN={'+':'足し算','*':'掛け算','/':'割り算','/0':'割り算（割り切れる）','/r':'割り算（あまりあり）','x':'掛け算'}
 H=1.2  # 行の高さ
 
 def layout(p):
@@ -19,6 +19,16 @@ def layout(p):
     op,r=p['op'],p['rows']; cells=[];lines=[];marks=[]
     def put(s,right,row):  # right = 一番右のマスの x
         for i,ch in enumerate(s): cells.append((right-len(s)+1+i,row,ch))
+    if op=='x':  # 横書きの式 a×b×…=c。1 行目に掛ける数、2 行目に = と積（右端そろえ）。show の位置は数字を見せる
+        *fs,c=re.split(r'[×=]',r); x=0
+        for i,f in enumerate(fs):
+            if i: marks.append(r'\node at (%.2f,%.2f) {$\times$};'%(x+.5,.5)); x+=1
+            put(f,x+len(f)-1,0); x+=len(f)
+        put(c,x-1,1); marks.append(r'\node at (%.2f,%.2f) {$=$};'%(x-len(c)-.5,-H+.5))
+        for i in p.get('show',[]):
+            cx,row,ch=cells[i]; y=-H*row
+            marks.append(r'\draw[very thick] (%.2f,%.2f) rectangle (%.2f,%.2f); \node at (%.2f,%.2f) {%s};'%(cx+.08,y+.08,cx+.92,y+.92,cx+.5,y+.5,ch))
+        return cells,lines,marks
     if op in '+*':
         if op=='+':
             a,b,c=re.match(r'(\d+)\+(\d+)=(\d+)',r).groups(); parts=[]; sym='+'

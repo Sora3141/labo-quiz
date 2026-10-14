@@ -212,7 +212,7 @@ if __name__=='__main__':
     try: out=json.load(open('levels.json'))
     except FileNotFoundError: out={}
     for p in ps:
-        if want and p['no'] not in want: continue
+        if want and p['no'] not in want or p['op']=='x': continue  # 横書きの式は測れない
         c=build(p); st=solve(c)
         out[str(p['no'])]=st; json.dump(out,open('levels.json','w'),indent=1)
         print(p['no'],p['n'],p['op'],len(c.cells),st,flush=True)

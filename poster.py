@@ -5,7 +5,7 @@
 # 使い方: issues.json に {"no": 回, "title": "虫食い算", "problem": 問題番号, "date": "YYYY-MM-DD"} を足してから
 #         uv run poster.py 3    → posters/第3回.pdf と 3/index.html、一覧の index.html
 #         uv run poster.py      → 全部の回を作り直す
-import json, os, subprocess, sys, html, segno
+import json, os, re, subprocess, sys, html, segno
 from make import P, pic, width, layout, OPN, H
 
 URL = 'https://sora3141.github.io/labo-quiz/'
@@ -20,9 +20,11 @@ def tex(name, body):
 
 def rule(p):  # ルール文 (日本語, 英語)。LaTeX の数式で書く（Web では uni() で Unicode にする）
     n, m, op = p['n'], p['m'], p['op']
-    D = '$' + ','.join(map(str, range(1 if m == 'tri' else 0, n))) + '$'  # 使う数字を全部並べる（例: 0,1,…,6）
-    ja = (f'{D} を 1 つずつ □ に入れ、' if m == 1 else f'各 □ に {D} のどれかを入れ、') + f'{n} 進法で正しい{ {"+": "足し算", "*": "掛け算", "/": "割り算"}[op[0]] }の筆算を完成させよ。'
-    en = (f'Place each of {D} in one □' if m == 1 else f'Fill each □ with one of {D}') + f' so that the { {"+": "addition", "*": "long multiplication", "/": "long division"}[op[0]] } is correct in base {n}. '
+    D = '$' + ','.join(str(i) if i < 10 else r'\mathrm{%s}' % 'ABCDEF'[i - 10] for i in range(1 if m == 'tri' else 0, n)) + '$'  # 使う数字を全部並べる（例: 0,1,…,6）
+    ja = (f'{D} を 1 つずつ □ に入れ、' if m == 1 else f'各 □ に {D} のどれかを入れ、') + f'{n} 進法で正しい{ {"+": "足し算の筆算", "*": "掛け算の筆算", "/": "割り算の筆算", "x": "掛け算の式"}[op[0]] }を完成させよ。'
+    en = (f'Place each of {D} in one □' if m == 1 else f'Fill each □ with one of {D}') + f' so that the { {"+": "addition", "*": "long multiplication", "/": "long division", "x": "multiplication"}[op[0]] } is correct in base {n}. '
+    if op == 'x':
+        ja += '掛ける数は左から小さい順に並ぶ。'; en += 'The factors are in increasing order from left to right. '
     if m == 'tri':
         ja += f'数字 $d$ はちょうど $d$ 回使う（$1 \\le d \\le {n-1}$）。'; en += f'Each digit $d$ is used exactly $d$ times ($1 \\le d \\le {n-1}$). '
     elif m != 1:
@@ -32,6 +34,7 @@ def rule(p):  # ルール文 (日本語, 英語)。LaTeX の数式で書く（We
     return ja + '解は一意である。', en + 'The solution is unique.'
 
 def uni(t):  # Web 用に LaTeX の数式を Unicode に
+    t = re.sub(r'\\mathrm\{(\w)\}', r'\1', t)
     for a, b in [(r'\{', '{'), (r'\}', '}'), (r'\dots', '…'), (r'\le', '≤'), (r'\times', '×'), ('$', '')]: t = t.replace(a, b)
     return html.escape(t)
 
