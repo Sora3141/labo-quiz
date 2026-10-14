@@ -48,7 +48,7 @@ def build(p):
             for v in P[len(P)-o:]: c.dom[v]={0}
             c.cons.append(('mul',A,B[0],P[:len(P)-o]))
         def sol(A_,B_):
-            out=[A_,B_]; bd=[int(x) for x in reversed(digits(B_,n))]
+            out=[A_,B_]; bd=[int(x,16) for x in reversed(digits(B_,n))]
             if parts: out+=[A_*d for d in bd if d]
             return out+[A_*B_]
     else:
@@ -92,7 +92,7 @@ def build(p):
         c.Rv=Rv
         A,B=A,Q  # 自由な 2 数: 割る数と商
         def sol(A_,B_,R_=0):
-            Dn=A_*B_+R_; out=[B_,A_,Dn]; cur=0; first=True; ds=[int(x) for x in digits(Dn,n)]
+            Dn=A_*B_+R_; out=[B_,A_,Dn]; cur=0; first=True; ds=[int(x,16) for x in digits(Dn,n)]
             for j,dj in enumerate(ds):
                 cur=cur*n+dj; qq=cur//A_
                 if qq:
@@ -105,7 +105,7 @@ def build(p):
 
 def digits(x,n):
     s=''
-    while x: s=str(x%n)+s; x//=n
+    while x: s='0123456789ABCDEF'[x%n]+s; x//=n
     return s or '0'
 
 def revise(c,con,dom):
@@ -196,7 +196,7 @@ def solve(c):
             # 検算: 自由な 2 数から全部の行を作り直して比べる
             A_,B_=val(c.A,dom,c.n),val(c.B,dom,c.n)
             want=''.join(digits(x,c.n) for x in (c.sol(A_,B_,val(c.Rv,dom,c.n)) if c.Rv else c.sol(A_,B_)))
-            got=''.join(str(next(iter(dom[v]))) for R in c.rows for v in R)
+            got=''.join('0123456789ABCDEF'[next(iter(dom[v]))] for R in c.rows for v in R)
             if want==got: stats['sol']+=1
             return
         stats['guess']+=1
