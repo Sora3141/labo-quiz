@@ -1,0 +1,49 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>No.4 オセロ最短決着 | らぼらとらい</title>
+<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#222;background:#fff}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px}header img{height:56px}
+img{max-width:100%;height:auto}img[src$=".svg"]{display:block;width:min(100%,360px);margin:16px auto}a{color:#c00}.meta{color:#666}
+li{margin:12px 0}summary{display:inline-block;margin:24px 0 12px;padding:12px 24px;border-radius:8px;background:#c00;color:#fff;font-weight:bold;cursor:pointer;list-style:none}summary::-webkit-details-marker{display:none}details[open] summary{background:#888}ul{list-style:none;padding:0}
+#bd{display:block;width:min(100%,420px);margin:16px auto;user-select:none}#bd .hit{cursor:pointer}#st,.ctl,.ans{text-align:center}.ans{font-size:1.4em}
+.ctl button{font-size:1.1em;margin:0 3px;padding:6px 12px;border:1px solid #c00;border-radius:6px;background:#fff;color:#c00;cursor:pointer}
+#mv{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;padding:0;list-style:none;color:#999}#mv li{margin:0}#mv .done{color:#222}#mv .cur{color:#c00;font-weight:bold}</style></head><body>
+<header><img src="../logos/labo.png" alt="らぼらとらい"><img src="../logos/jaist.png" alt="JAIST" style="height:28px"></header>
+<h1>No.4 オセロ最短決着</h1>
+<p class="meta">2026-10-20 ・ オセロ</p>
+<p>オセロ（リバーシ）を下の初期配置から始める。黒が先手。どちらも石を置けなくなったら対局は終わる。対局が終わるまでに、最短で何手かかるか。</p><p lang="en">An Othello (Reversi) game starts from the position below, with Black to move first. The game ends when neither player can place a disc. What is the fewest number of moves in which a game can end?</p><img src="../img/4-q.svg" alt="No.4 の問題">
+
+<details><summary>Answer</summary>
+<p class="ans"><b>9 手</b>（黒 13・白 0 で黒の勝ち）</p>
+<p>9 手目で白の石が盤からなくなり、どちらも置けなくなります。手順の一例: f5 f6 f7 f4 f3 e3 d3 g7 h8</p>
+<p lang="en"><b>9 moves</b>. Black wins 13–0: after the 9th move no white discs remain, so neither player can move.</p>
+<div id="oth"><svg id="bd" viewBox="-30 -30 830 830" role="img" aria-label="オセロの盤"></svg>
+<p id="st" aria-live="polite"></p>
+<p class="ctl"><button id="b0">⏮</button><button id="bp">◀</button><button id="pl">▶ 再生</button><button id="bn">▶|</button><button id="b9">⏭</button></p>
+<ol id="mv"></ol>
+<p class="meta">点（・）のマスをクリックすると、そこから自分で打てます。⏮ で最初に戻ります。</p></div>
+</details>
+<script>
+const SOL=['f5', 'f6', 'f7', 'f4', 'f3', 'e3', 'd3', 'g7', 'h8'], N=8, D=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+let hist=[], timer=null;
+function init(){const b=Array.from({length:N},()=>Array(N).fill(0));b[3][3]=b[4][4]=2;b[3][4]=b[4][3]=1;return b;}
+function flips(b,x,y,c){if(b[y][x])return[];let r=[];for(const[dx,dy]of D){let t=[],i=x+dx,j=y+dy;while(i>=0&&i<N&&j>=0&&j<N&&b[j][i]===3-c){t.push([i,j]);i+=dx;j+=dy;}if(t.length&&i>=0&&i<N&&j>=0&&j<N&&b[j][i]===c)r=r.concat(t);}return r;}
+function legal(b,c){let r=[];for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(flips(b,x,y,c).length)r.push([x,y]);return r;}
+function state(ms){let b=init(),c=1;for(const m of ms){if(!legal(b,c).length)c=3-c;const x=m.charCodeAt(0)-97,y=+m[1]-1;for(const[i,j]of flips(b,x,y,c))b[j][i]=c;b[y][x]=c;c=3-c;}if(!legal(b,c).length)c=3-c;return{b,c,over:!legal(b,1).length&&!legal(b,2).length};}
+let moves=[...SOL], k=0;
+function draw(){const{b,c,over}=state(moves.slice(0,k)),L=over?[]:legal(b,c),last=moves[k-1];let s='<rect width="800" height="800" fill="#1f8a4c"/>';
+for(let i=0;i<=N;i++)s+=`<line x1="${i*100}" y1="0" x2="${i*100}" y2="800" stroke="#000" stroke-width="${i%8?2:5}"/><line x1="0" y1="${i*100}" x2="800" y2="${i*100}" stroke="#000" stroke-width="${i%8?2:5}"/>`;
+for(let i=0;i<N;i++)s+=`<text x="${i*100+50}" y="-8" text-anchor="middle" font-size="28">${'abcdefgh'[i]}</text><text x="-15" y="${i*100+60}" text-anchor="middle" font-size="28">${i+1}</text>`;
+let nb=0,nw=0;for(let y=0;y<N;y++)for(let x=0;x<N;x++){const v=b[y][x];if(!v)continue;v===1?nb++:nw++;s+=`<circle cx="${x*100+50}" cy="${y*100+50}" r="40" fill="${v===1?'#111':'#fff'}" stroke="#000" stroke-width="2"/>`;}
+if(last){const x=last.charCodeAt(0)-97,y=+last[1]-1;s+=`<circle cx="${x*100+50}" cy="${y*100+50}" r="9" fill="#e33"/>`;}
+for(const[x,y]of L)s+=`<circle cx="${x*100+50}" cy="${y*100+50}" r="10" fill="${c===1?'#000':'#fff'}" opacity=".45"/><rect class="hit" data-m="${'abcdefgh'[x]+(y+1)}" x="${x*100}" y="${y*100}" width="100" height="100" fill="transparent"/>`;
+bd.innerHTML=s;
+st.textContent=`${k} 手目　黒 ${nb}・白 ${nw}　`+(over?'対局終了':`${c===1?'黒':'白'}の番`);
+mv.innerHTML=moves.map((m,i)=>`<li class="${i<k?'done':''}${i===k-1?' cur':''}">${i%2?'白':'黒'} ${m}</li>`).join('');}
+function go(n){k=Math.max(0,Math.min(moves.length,n));draw();}
+function stop(){clearInterval(timer);timer=null;pl.textContent='▶ 再生';}
+b0.onclick=()=>{stop();moves=[...SOL];go(0);};bp.onclick=()=>{stop();go(k-1);};bn.onclick=()=>{stop();go(k+1);};b9.onclick=()=>{stop();go(moves.length);};
+pl.onclick=()=>{if(timer)return stop();if(k>=moves.length)go(0);pl.textContent='❚❚ 停止';timer=setInterval(()=>{if(k>=moves.length)return stop();go(k+1);},900);};
+bd.onclick=e=>{const m=e.target.dataset&&e.target.dataset.m;if(!m)return;stop();moves=moves.slice(0,k).concat(m);go(k+1);};
+draw();
+</script>
+<p><a href="../">過去の問題一覧へ</a></p></body></html>

@@ -39,12 +39,71 @@ def uni(t):  # Web 用に LaTeX の数式を Unicode に
     return html.escape(t)
 
 def svg(name, p, ans):  # 問題・答えの図を SVG に
+    svgtex(name, pic(p, ans, 0.6))
+
+def svgtex(name, code):  # TikZ の図を SVG に
     # standalone.cls が無いので、図の箱の大きさにページを合わせて直接出す
-    pdf = tex(name, r'''\documentclass{article}\usepackage{tikz}\begin{document}
+    pdf = tex(name, r'''\documentclass{article}\usepackage{tikz}\begin{document}\sffamily
 \setbox0\hbox{\kern4pt\vbox{\kern4pt\hbox{%s}\kern4pt}\kern4pt}
 \pagewidth=\wd0 \pageheight=\dimexpr\ht0+\dp0\relax \hoffset=-1in \voffset=-1in \shipout\box0
-\end{document}''' % pic(p, ans, 0.6))
+\end{document}''' % code)
     subprocess.run(['pdftocairo', '-svg', pdf, f'img/{name}.svg'], check=True)
+
+# オセロの回（issues.json で "kind": "othello"）。最短手数と手順は solver で確かめた（9 手、黒 13・白 0）
+OTH_RULE = ('オセロ（リバーシ）を下の初期配置から始める。黒が先手。どちらも石を置けなくなったら対局は終わる。'
+            '対局が終わるまでに、最短で何手かかるか。',
+            'An Othello (Reversi) game starts from the position below, with Black to move first. '
+            'The game ends when neither player can place a disc. What is the fewest number of moves in which a game can end?')
+OTH_MOVES = 'f5 f6 f7 f4 f3 e3 d3 g7 h8'.split()
+
+def board(unit):  # 初期配置の盤（unit はマスの大きさ mm）
+    discs = ''.join(r'\filldraw[fill=%s,draw=black,line width=.8pt] (%.1f,%.1f) circle (.4);' % (c, x + .5, y + .5)
+                    for c, x, y in [('white', 3, 3), ('black', 4, 3), ('black', 3, 4), ('white', 4, 4)])
+    return r'''\begin{tikzpicture}[x=%smm,y=-%smm]
+\fill[green!55!black] (0,0) rectangle (8,8);
+\foreach \i in {1,...,7} {\draw[line width=.6pt] (\i,0)--(\i,8); \draw[line width=.6pt] (0,\i)--(8,\i);}
+\draw[line width=1.6pt] (0,0) rectangle (8,8);
+\foreach \x/\y in {2/2,6/2,2/6,6/6} \fill (\x,\y) circle (.07);
+\foreach \c [count=\i from 0] in {a,b,c,d,e,f,g,h} \node at (\i+.5,-.4) {\c};
+\foreach \i in {1,...,8} \node at (-.4,\i-.5) {\i};
+%s\end{tikzpicture}''' % (unit, unit, discs)
+
+def othello_web(no):  # 答えのページ: 手順を盤の上で再生できる。途中から自分で打つこともできる
+    return f'''
+<details><summary>Answer</summary>
+<p class="ans"><b>9 手</b>（黒 13・白 0 で黒の勝ち）</p>
+<p>9 手目で白の石が盤からなくなり、どちらも置けなくなります。手順の一例: {' '.join(OTH_MOVES)}</p>
+<p lang="en"><b>9 moves</b>. Black wins 13–0: after the 9th move no white discs remain, so neither player can move.</p>
+<div id="oth"><svg id="bd" viewBox="-30 -30 830 830" role="img" aria-label="オセロの盤"></svg>
+<p id="st" aria-live="polite"></p>
+<p class="ctl"><button id="b0">⏮</button><button id="bp">◀</button><button id="pl">▶ 再生</button><button id="bn">▶|</button><button id="b9">⏭</button></p>
+<ol id="mv"></ol>
+<p class="meta">点（・）のマスをクリックすると、そこから自分で打てます。⏮ で最初に戻ります。</p></div>
+</details>
+<script>
+const SOL={OTH_MOVES!r}, N=8, D=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+let hist=[], timer=null;
+function init(){{const b=Array.from({{length:N}},()=>Array(N).fill(0));b[3][3]=b[4][4]=2;b[3][4]=b[4][3]=1;return b;}}
+function flips(b,x,y,c){{if(b[y][x])return[];let r=[];for(const[dx,dy]of D){{let t=[],i=x+dx,j=y+dy;while(i>=0&&i<N&&j>=0&&j<N&&b[j][i]===3-c){{t.push([i,j]);i+=dx;j+=dy;}}if(t.length&&i>=0&&i<N&&j>=0&&j<N&&b[j][i]===c)r=r.concat(t);}}return r;}}
+function legal(b,c){{let r=[];for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(flips(b,x,y,c).length)r.push([x,y]);return r;}}
+function state(ms){{let b=init(),c=1;for(const m of ms){{if(!legal(b,c).length)c=3-c;const x=m.charCodeAt(0)-97,y=+m[1]-1;for(const[i,j]of flips(b,x,y,c))b[j][i]=c;b[y][x]=c;c=3-c;}}if(!legal(b,c).length)c=3-c;return{{b,c,over:!legal(b,1).length&&!legal(b,2).length}};}}
+let moves=[...SOL], k=0;
+function draw(){{const{{b,c,over}}=state(moves.slice(0,k)),L=over?[]:legal(b,c),last=moves[k-1];let s='<rect width="800" height="800" fill="#1f8a4c"/>';
+for(let i=0;i<=N;i++)s+=`<line x1="${{i*100}}" y1="0" x2="${{i*100}}" y2="800" stroke="#000" stroke-width="${{i%8?2:5}}"/><line x1="0" y1="${{i*100}}" x2="800" y2="${{i*100}}" stroke="#000" stroke-width="${{i%8?2:5}}"/>`;
+for(let i=0;i<N;i++)s+=`<text x="${{i*100+50}}" y="-8" text-anchor="middle" font-size="28">${{'abcdefgh'[i]}}</text><text x="-15" y="${{i*100+60}}" text-anchor="middle" font-size="28">${{i+1}}</text>`;
+let nb=0,nw=0;for(let y=0;y<N;y++)for(let x=0;x<N;x++){{const v=b[y][x];if(!v)continue;v===1?nb++:nw++;s+=`<circle cx="${{x*100+50}}" cy="${{y*100+50}}" r="40" fill="${{v===1?'#111':'#fff'}}" stroke="#000" stroke-width="2"/>`;}}
+if(last){{const x=last.charCodeAt(0)-97,y=+last[1]-1;s+=`<circle cx="${{x*100+50}}" cy="${{y*100+50}}" r="9" fill="#e33"/>`;}}
+for(const[x,y]of L)s+=`<circle cx="${{x*100+50}}" cy="${{y*100+50}}" r="10" fill="${{c===1?'#000':'#fff'}}" opacity=".45"/><rect class="hit" data-m="${{'abcdefgh'[x]+(y+1)}}" x="${{x*100}}" y="${{y*100}}" width="100" height="100" fill="transparent"/>`;
+bd.innerHTML=s;
+st.textContent=`${{k}} 手目　黒 ${{nb}}・白 ${{nw}}　`+(over?'対局終了':`${{c===1?'黒':'白'}}の番`);
+mv.innerHTML=moves.map((m,i)=>`<li class="${{i<k?'done':''}}${{i===k-1?' cur':''}}">${{i%2?'白':'黒'}} ${{m}}</li>`).join('');}}
+function go(n){{k=Math.max(0,Math.min(moves.length,n));draw();}}
+function stop(){{clearInterval(timer);timer=null;pl.textContent='▶ 再生';}}
+b0.onclick=()=>{{stop();moves=[...SOL];go(0);}};bp.onclick=()=>{{stop();go(k-1);}};bn.onclick=()=>{{stop();go(k+1);}};b9.onclick=()=>{{stop();go(moves.length);}};
+pl.onclick=()=>{{if(timer)return stop();if(k>=moves.length)go(0);pl.textContent='❚❚ 停止';timer=setInterval(()=>{{if(k>=moves.length)return stop();go(k+1);}},900);}};
+bd.onclick=e=>{{const m=e.target.dataset&&e.target.dataset.m;if(!m)return;stop();moves=moves.slice(0,k).concat(m);go(k+1);}};
+draw();
+</script>'''
 
 def crop(name):  # ロゴの描画部分だけを切り抜く（logos/ の元画像はそのまま）
     from PIL import Image
@@ -53,12 +112,19 @@ def crop(name):  # ロゴの描画部分だけを切り抜く（logos/ の元画
     flat.crop(flat.convert('L').point(lambda v: 255 if v < 245 else 0).getbbox()).save(f'build/{name}.png')
     return f'build/{name}.png'
 
+def kind(i):  # 一覧などに出す種類の名前
+    return 'オセロ' if i.get('kind') == 'othello' else OPN[P[i['problem']]['op']]
+
 def poster(i):
-    p = P[i['problem']]; no = i['no']; url = f'{URL}{no}/'
+    no = i['no']; url = f'{URL}{no}/'; oth = i.get('kind') == 'othello'
     qr = segno.make(url, error='m'); qr.save(f'build/qr-{no}.pdf', scale=10, border=4)  # まわりの白 4 マスは規格で要る
     qz = 40 * 4 / qr.symbol_size(border=4)[0]  # 白 4 マスの幅（mm）。黒い部分の端を余白線にそろえるのに使う
-    rows = max(r for _, r, _ in layout(p)[0]) + 1
-    s = min(16 / width(p), 12 / (rows * H))  # 図全体（× も）を幅 16cm・高さ 12cm に収まるまで拡大（説明文が 6 行でも 1 枚に入る高さ）
+    if oth:
+        ja, en = OTH_RULE; s, fig = 1, board(13)  # 盤は 1 マス 13mm（幅 10.4cm）
+    else:
+        p = P[i['problem']]; ja, en = rule(p); fig = pic(p, False, 1)
+        rows = max(r for _, r, _ in layout(p)[0]) + 1
+        s = min(16 / width(p), 12 / (rows * H))  # 図全体（× も）を幅 16cm・高さ 12cm に収まるまで拡大（説明文が 6 行でも 1 枚に入る高さ）
     body = r'''\documentclass[a4paper]{ltjsarticle}
 \usepackage[margin=15mm]{geometry}\usepackage{tikz,graphicx}\pagestyle{empty}
 \begin{document}\sffamily\setlength{\parindent}{0pt}
@@ -78,14 +144,16 @@ def poster(i):
 \leavevmode\raisebox{-.5\height}{\includegraphics[height=36mm]{%s}}\hfill
 \raisebox{-.5\height}{\begin{tabular}[b]{@{}c@{}}\small 過去の問題と答え\\[1mm]\footnotesize %s\end{tabular}}\hfill
 \raisebox{-.5\height}{\includegraphics[height=13mm]{%s}}\par\kern0pt  %% 下に出る深さも本文の高さに入れて、下の余白にはみ出さない
-\end{document}''' % (no, i['title'], qz, no, qz, qz, *rule(p), s, pic(p, False, 1), crop('labo'), URL, crop('jaist'))
+\end{document}''' % (no, i['title'], qz, no, qz, qz, ja, en, s, fig, crop('labo'), URL, crop('jaist'))
     os.replace(tex(f'poster-{no}', body), f'posters/第{no}回.pdf')
-    svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
+    if oth: svgtex(f'{no}-q', board(7))
+    else: svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
+    ans = othello_web(no) if oth else f'<details><summary>Answer</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>'
     os.makedirs(str(no), exist_ok=True)
     open(f'{no}/index.html', 'w').write(page(f'No.{no} {i["title"]}', f'''
-<p class="meta">{i["date"]} ・ {OPN[p["op"]]}</p>
-<p>{uni(rule(p)[0])}</p><p lang="en">{uni(rule(p)[1])}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
-<details><summary>Answer</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>
+<p class="meta">{i["date"]} ・ {kind(i)}</p>
+<p>{uni(ja)}</p><p lang="en">{uni(en)}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
+{ans}
 <p><a href="../">過去の問題一覧へ</a></p>''', '../'))
 
 def page(title, body, root):
@@ -94,13 +162,16 @@ def page(title, body, root):
 <style>body{{font-family:system-ui,sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#222;background:#fff}}
 header{{display:flex;justify-content:space-between;align-items:center;gap:16px}}header img{{height:56px}}
 img{{max-width:100%;height:auto}}img[src$=".svg"]{{display:block;width:min(100%,360px);margin:16px auto}}a{{color:#c00}}.meta{{color:#666}}
-li{{margin:12px 0}}summary{{display:inline-block;margin:24px 0 12px;padding:12px 24px;border-radius:8px;background:#c00;color:#fff;font-weight:bold;cursor:pointer;list-style:none}}summary::-webkit-details-marker{{display:none}}details[open] summary{{background:#888}}ul{{list-style:none;padding:0}}</style></head><body>
+li{{margin:12px 0}}summary{{display:inline-block;margin:24px 0 12px;padding:12px 24px;border-radius:8px;background:#c00;color:#fff;font-weight:bold;cursor:pointer;list-style:none}}summary::-webkit-details-marker{{display:none}}details[open] summary{{background:#888}}ul{{list-style:none;padding:0}}
+#bd{{display:block;width:min(100%,420px);margin:16px auto;user-select:none}}#bd .hit{{cursor:pointer}}#st,.ctl,.ans{{text-align:center}}.ans{{font-size:1.4em}}
+.ctl button{{font-size:1.1em;margin:0 3px;padding:6px 12px;border:1px solid #c00;border-radius:6px;background:#fff;color:#c00;cursor:pointer}}
+#mv{{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;padding:0;list-style:none;color:#999}}#mv li{{margin:0}}#mv .done{{color:#222}}#mv .cur{{color:#c00;font-weight:bold}}</style></head><body>
 <header><img src="{root}logos/labo.png" alt="{CLUB}"><img src="{root}logos/jaist.png" alt="JAIST" style="height:28px"></header>
 <h1>{title}</h1>{body}</body></html>'''
 
 for i in issues:
     if not sys.argv[1:] or str(i['no']) in sys.argv[1:]:
         poster(i); print(f'posters/第{i["no"]}回.pdf')
-items = ''.join(f'<li><a href="{i["no"]}/">No.{i["no"]} {i["title"]}</a>　<span class="meta">{i["date"]} ・ {OPN[P[i["problem"]]["op"]]}</span></li>'
+items = ''.join(f'<li><a href="{i["no"]}/">No.{i["no"]} {i["title"]}</a>　<span class="meta">{i["date"]} ・ {kind(i)}</span></li>'
                 for i in reversed(issues))
 open('index.html', 'w').write(page('過去の問題', f'<p>{CLUB}（JAIST）が掲示板に貼っている問題の一覧です。</p><ul>{items}</ul>', ''))
