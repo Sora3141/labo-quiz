@@ -110,26 +110,6 @@ UNI_RULE = ('区間 $[0,1]$ の一様乱数を 1 つずつ足していき、和�
             '足した乱数の個数の期待値はいくらか。',
             'Add random numbers drawn independently and uniformly from $[0,1]$ one at a time, '
             'and stop as soon as the sum exceeds 1. What is the expected number of random numbers added?')
-UNI_EX = [.42, .31, .47]  # 図の例（3 個で止まる）
-
-def sumline(unit):  # 例の図: 1 段ごとに 1 個足して、和が破線の 1 を超えたら止まる（unit は 1 の長さ mm）
-    bars, text, s = '', '', 0
-    for k, u in enumerate(UNI_EX):
-        y = -k * .14; t = s + u
-        bars += (r'\fill[gray!25] (0,%.2f) rectangle (%.2f,%.2f);' % (y - .04, s, y + .04) if s else '') + \
-                r'\fill[%s] (%.2f,%.2f) rectangle (%.2f,%.2f);' % ('red!70' if t > 1 else 'blue!55', s, y - .04, t, y + .04)
-        text += r'\node[above,fill=white,inner sep=1pt] at (%.3f,%.2f) {$%.2f$};' % (s + u / 2, y + .05, u) + \
-                r'\node[right] at (%.2f,%.2f) {$%s=%.2f%s$};' % (t, y, '+'.join('U_%d' % (j + 1) for j in range(k + 1)), t, '>1' if t > 1 else '')
-        s = t
-    b = -len(UNI_EX) * .14
-    return r'''\begin{tikzpicture}[x=%smm,y=%smm]
-%s
-\draw[red,dashed,line width=1pt] (1,.16)--(1,%.2f);
-%s
-\draw[line width=.8pt,->] (0,%.2f)--(1.32,%.2f);
-\foreach \x in {0,0.5,1} {\draw (\x,%.2f)--++(0,-.03) node[below] {$\x$};}
-\end{tikzpicture}''' % (unit, unit, bars, b, text, b, b, b)
-
 def simplex(unit):  # 答えの図: 和が 1 以下になる部分（n=2 は三角形、n=3 は三角錐）
     return r'''\begin{tikzpicture}[x=%smm,y=%smm]
 \draw (0,0) rectangle (1,1); \fill[blue!35] (0,0)--(1,0)--(0,1)--cycle; \draw[blue!70!black,line width=1pt] (1,0)--(0,1);
@@ -188,11 +168,13 @@ def poster(i):
     if oth:
         ja, en = OTH_RULE; s, fig = 1, board(13)  # 盤は 1 マス 13mm（幅 10.4cm）
     elif unf:
-        ja, en = UNI_RULE; s, fig = 1, sumline(110)  # 1 の長さ 110mm（右の式まで入れて幅 17cm 強）
+        ja, en = UNI_RULE; fig = None  # 図は載せない（文だけで足りる）
     else:
         p = P[i['problem']]; ja, en = rule(p); fig = pic(p, False, 1)
         rows = max(r for _, r, _ in layout(p)[0]) + 1
         s = min(16 / width(p), 12 / (rows * H))  # 図全体（× も）を幅 16cm・高さ 12cm に収まるまで拡大（説明文が 6 行でも 1 枚に入る高さ）
+    mid = (r'{\large %s\par\medskip %s\par}\vspace{8mm}\begin{center}\scalebox{%.2f}{%s}\end{center}' % (ja, en, s, fig) if fig else
+           r'{\LARGE %s\par\bigskip %s\par}' % (ja, en))  # 図のない回は文を大きくする
     body = r'''\documentclass[a4paper]{ltjsarticle}
 \usepackage[margin=15mm]{geometry}\usepackage{tikz,graphicx}\pagestyle{empty}
 \begin{document}\sffamily\setlength{\parindent}{0pt}
@@ -203,8 +185,7 @@ def poster(i):
 
 \vfill
 %% 中: ルール文と問題
-{\large %s\par\medskip %s\par}\vspace{8mm}
-\begin{center}\scalebox{%.2f}{%s}\end{center}
+%s
 
 \vfill
 %% 下: 出した側の帯。2 つのロゴは見た目の重さが合う高さ、縦の中心をそろえる
@@ -212,16 +193,16 @@ def poster(i):
 \leavevmode\raisebox{-.5\height}{\includegraphics[height=36mm]{%s}}\hfill
 \raisebox{-.5\height}{\begin{tabular}[b]{@{}c@{}}\small 過去の問題と答え\\[1mm]\footnotesize %s\end{tabular}}\hfill
 \raisebox{-.5\height}{\includegraphics[height=13mm]{%s}}\par\kern0pt  %% 下に出る深さも本文の高さに入れて、下の余白にはみ出さない
-\end{document}''' % (no, i['title'], qz, no, qz, qz, ja, en, s, fig, crop('labo'), URL, crop('jaist'))
+\end{document}''' % (no, i['title'], qz, no, qz, qz, mid, crop('labo'), URL, crop('jaist'))
     os.replace(tex(f'poster-{no}', body), f'posters/第{no}回.pdf')
     if oth: svgtex(f'{no}-q', board(7))
-    elif unf: svgtex(f'{no}-q', sumline(45)); svgtex(f'{no}-a', simplex(30))
+    elif unf: svgtex(f'{no}-a', simplex(30))
     else: svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
     ans = othello_web(no) if oth else uniform_web(no) if unf else f'<details><summary>Answer</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>'
     os.makedirs(str(no), exist_ok=True)
     open(f'{no}/index.html', 'w').write(page(f'No.{no} {i["title"]}', f'''
 <p class="meta">{i["date"]} ・ {kind(i)}</p>
-<p>{uni(ja)}</p><p lang="en">{uni(en)}</p><img src="../img/{no}-q.svg" alt="No.{no} の問題">
+<p>{uni(ja)}</p><p lang="en">{uni(en)}</p>{'' if unf else f'<img src="../img/{no}-q.svg" alt="No.{no} の問題">'}
 {ans}
 <p><a href="../">過去の問題一覧へ</a></p>''', '../'))
 
