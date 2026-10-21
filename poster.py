@@ -105,6 +105,72 @@ bd.onclick=e=>{{const m=e.target.dataset&&e.target.dataset.m;if(!m)return;stop()
 draw();
 </script>'''
 
+# 一様乱数の和の回（"kind": "uniform"）。答えは e。P(N > n) = P(U1+…+Un ≤ 1) = 1/n! を足し合わせる
+UNI_RULE = ('区間 $[0,1]$ の一様乱数を 1 つずつ足していき、和が初めて 1 を超えたら止める。'
+            '足した乱数の個数の期待値はいくらか。',
+            'Add random numbers drawn independently and uniformly from $[0,1]$ one at a time, '
+            'and stop as soon as the sum exceeds 1. What is the expected number of random numbers added?')
+UNI_EX = [.42, .31, .47]  # 図の例（3 個で止まる）
+
+def sumline(unit):  # 例の図: 1 段ごとに 1 個足して、和が破線の 1 を超えたら止まる（unit は 1 の長さ mm）
+    bars, text, s = '', '', 0
+    for k, u in enumerate(UNI_EX):
+        y = -k * .14; t = s + u
+        bars += (r'\fill[gray!25] (0,%.2f) rectangle (%.2f,%.2f);' % (y - .04, s, y + .04) if s else '') + \
+                r'\fill[%s] (%.2f,%.2f) rectangle (%.2f,%.2f);' % ('red!70' if t > 1 else 'blue!55', s, y - .04, t, y + .04)
+        text += r'\node[above,fill=white,inner sep=1pt] at (%.3f,%.2f) {$%.2f$};' % (s + u / 2, y + .05, u) + \
+                r'\node[right] at (%.2f,%.2f) {$%s=%.2f%s$};' % (t, y, '+'.join('U_%d' % (j + 1) for j in range(k + 1)), t, '>1' if t > 1 else '')
+        s = t
+    b = -len(UNI_EX) * .14
+    return r'''\begin{tikzpicture}[x=%smm,y=%smm]
+%s
+\draw[red,dashed,line width=1pt] (1,.16)--(1,%.2f);
+%s
+\draw[line width=.8pt,->] (0,%.2f)--(1.32,%.2f);
+\foreach \x in {0,0.5,1} {\draw (\x,%.2f)--++(0,-.03) node[below] {$\x$};}
+\end{tikzpicture}''' % (unit, unit, bars, b, text, b, b, b)
+
+def simplex(unit):  # 答えの図: 和が 1 以下になる部分（n=2 は三角形、n=3 は三角錐）
+    return r'''\begin{tikzpicture}[x=%smm,y=%smm]
+\draw (0,0) rectangle (1,1); \fill[blue!35] (0,0)--(1,0)--(0,1)--cycle; \draw[blue!70!black,line width=1pt] (1,0)--(0,1);
+\node[below] at (.5,0) {$U_1$}; \node[left] at (0,.5) {$U_2$}; \node at (.3,.3) {$\frac12$};
+\node[below] at (.5,-.25) {$n=2$};
+\begin{scope}[xshift=%smm,x={(%smm,0)},y={(0,%smm)},z={(-%smm,-%smm)}]
+\draw[gray] (1,0,0)--(1,1,0)--(0,1,0) (0,0,1)--(1,0,1)--(1,1,1)--(0,1,1)--cycle (1,0,0)--(1,0,1) (1,1,0)--(1,1,1) (0,1,0)--(0,1,1);
+\fill[blue!35,opacity=.85] (1,0,0)--(0,1,0)--(0,0,1)--cycle; \draw[blue!70!black,line width=1pt] (1,0,0)--(0,1,0)--(0,0,1)--cycle;
+\draw[blue!70!black,dashed] (0,0,0)--(1,0,0) (0,0,0)--(0,1,0) (0,0,0)--(0,0,1);
+\node[right] at (1,0,0) {$U_1$}; \node[above] at (0,1,0) {$U_2$}; \node[left] at (0,0,1) {$U_3$}; \node at (.3,.3,.3) {$\frac16$};
+\node[below] at (.5,-.08,1) {$n=3$};
+\end{scope}\end{tikzpicture}''' % (unit, unit, 2.1 * unit, unit, unit, .45 * unit, .3 * unit)
+
+def uniform_web(no):  # 答えのページ: 解説と、ブラウザで試せるシミュレーション
+    return f'''
+<details><summary>Answer</summary>
+<p class="ans"><b><i>e</i> = 2.71828…</b></p>
+<p lang="en">The expected number is <i>e</i>.</p>
+<h2>解説</h2>
+<p>足した個数を <i>N</i> とします。「<i>n</i> 個足してもまだ止まらない」のは「<i>n</i> 個の和が 1 以下」のときなので</p>
+<p class="eq"><i>P</i>(<i>N</i> &gt; <i>n</i>) = <i>P</i>(<i>U</i><sub>1</sub> + … + <i>U</i><sub><i>n</i></sub> ≤ 1)</p>
+<p>この確率は、<i>n</i> 次元の立方体のうち和が 1 以下の部分の体積です。<i>n</i> = 2 なら三角形で 1/2、<i>n</i> = 3 なら三角錐で 1/6。</p>
+<img src="../img/{no}-a.svg" alt="n=2 の三角形（面積 1/2）と n=3 の三角錐（体積 1/6）">
+<p>一般の <i>n</i> では、部分和 <i>y<sub>k</sub></i> = <i>U</i><sub>1</sub> + … + <i>U<sub>k</sub></i> に置きかえると（体積は変わらない）、条件は 0 ≤ <i>y</i><sub>1</sub> ≤ <i>y</i><sub>2</sub> ≤ … ≤ <i>y<sub>n</sub></i> ≤ 1 になります。[0,1] の <i>n</i> 個の数の並び方 <i>n</i>! 通りはどれも同じ確率なので、小さい順に並ぶ確率は 1/<i>n</i>!。</p>
+<p class="eq"><i>P</i>(<i>N</i> &gt; <i>n</i>) = 1/<i>n</i>!</p>
+<p>0 以上の整数をとる確率変数では <i>E</i>[<i>N</i>] = Σ<sub><i>n</i>≥0</sub> <i>P</i>(<i>N</i> &gt; <i>n</i>) なので</p>
+<p class="eq"><i>E</i>[<i>N</i>] = 1/0! + 1/1! + 1/2! + 1/3! + … = <i>e</i></p>
+<p>おまけ: <i>P</i>(<i>N</i> = <i>n</i>) = 1/(<i>n</i>−1)! − 1/<i>n</i>! = (<i>n</i>−1)/<i>n</i>!。2 個で止まる確率は 1/2、3 個は 1/3、4 個は 1/8。</p>
+<h2>試してみる</h2>
+<p class="ctl"><button id="one">1 回</button><button id="many">1000 回</button><button id="rs">リセット</button></p>
+<p id="last" class="eq"></p>
+<p id="avg" class="eq" aria-live="polite"></p>
+</details>
+<script>
+let n=0, tot=0;
+function run(){{let s=0,u=[];while(s<=1){{const x=Math.random();u.push(x);s+=x;}}n++;tot+=u.length;return u;}}
+function show(u){{if(u)last.textContent=u.map(x=>x.toFixed(3)).join(' + ')+' = '+u.reduce((a,b)=>a+b).toFixed(3)+'  →  '+u.length+' 個';
+avg.textContent=n?`${{n}} 回の平均: ${{(tot/n).toFixed(4)}}（e = 2.7183）`:'';}}
+one.onclick=()=>show(run()); many.onclick=()=>{{let u;for(let i=0;i<1000;i++)u=run();show(u);}}; rs.onclick=()=>{{n=tot=0;last.textContent='';show();}};
+</script>'''
+
 def crop(name):  # ロゴの描画部分だけを切り抜く（logos/ の元画像はそのまま）
     from PIL import Image
     im = Image.open(f'logos/{name}.png').convert('RGBA')
@@ -113,14 +179,16 @@ def crop(name):  # ロゴの描画部分だけを切り抜く（logos/ の元画
     return f'build/{name}.png'
 
 def kind(i):  # 一覧などに出す種類の名前
-    return 'オセロ' if i.get('kind') == 'othello' else OPN[P[i['problem']]['op']]
+    return {'othello': 'オセロ', 'uniform': '確率'}.get(i.get('kind')) or OPN[P[i['problem']]['op']]
 
 def poster(i):
-    no = i['no']; url = f'{URL}{no}/'; oth = i.get('kind') == 'othello'
+    no = i['no']; url = f'{URL}{no}/'; oth = i.get('kind') == 'othello'; unf = i.get('kind') == 'uniform'
     qr = segno.make(url, error='m'); qr.save(f'build/qr-{no}.pdf', scale=10, border=4)  # まわりの白 4 マスは規格で要る
     qz = 40 * 4 / qr.symbol_size(border=4)[0]  # 白 4 マスの幅（mm）。黒い部分の端を余白線にそろえるのに使う
     if oth:
         ja, en = OTH_RULE; s, fig = 1, board(13)  # 盤は 1 マス 13mm（幅 10.4cm）
+    elif unf:
+        ja, en = UNI_RULE; s, fig = 1, sumline(110)  # 1 の長さ 110mm（右の式まで入れて幅 17cm 強）
     else:
         p = P[i['problem']]; ja, en = rule(p); fig = pic(p, False, 1)
         rows = max(r for _, r, _ in layout(p)[0]) + 1
@@ -147,8 +215,9 @@ def poster(i):
 \end{document}''' % (no, i['title'], qz, no, qz, qz, ja, en, s, fig, crop('labo'), URL, crop('jaist'))
     os.replace(tex(f'poster-{no}', body), f'posters/第{no}回.pdf')
     if oth: svgtex(f'{no}-q', board(7))
+    elif unf: svgtex(f'{no}-q', sumline(45)); svgtex(f'{no}-a', simplex(30))
     else: svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
-    ans = othello_web(no) if oth else f'<details><summary>Answer</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>'
+    ans = othello_web(no) if oth else uniform_web(no) if unf else f'<details><summary>Answer</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>'
     os.makedirs(str(no), exist_ok=True)
     open(f'{no}/index.html', 'w').write(page(f'No.{no} {i["title"]}', f'''
 <p class="meta">{i["date"]} ・ {kind(i)}</p>
@@ -163,7 +232,7 @@ def page(title, body, root):
 header{{display:flex;justify-content:space-between;align-items:center;gap:16px}}header img{{height:56px}}
 img{{max-width:100%;height:auto}}img[src$=".svg"]{{display:block;width:min(100%,360px);margin:16px auto}}a{{color:#c00}}.meta{{color:#666}}
 li{{margin:12px 0}}summary{{display:inline-block;margin:24px 0 12px;padding:12px 24px;border-radius:8px;background:#c00;color:#fff;font-weight:bold;cursor:pointer;list-style:none}}summary::-webkit-details-marker{{display:none}}details[open] summary{{background:#888}}ul{{list-style:none;padding:0}}
-#bd{{display:block;width:min(100%,420px);margin:16px auto;user-select:none}}#bd .hit{{cursor:pointer}}#st,.ctl,.ans{{text-align:center}}.ans{{font-size:1.4em}}
+#bd{{display:block;width:min(100%,420px);margin:16px auto;user-select:none}}#bd .hit{{cursor:pointer}}#st,.ctl,.ans,.eq{{text-align:center}}.eq{{font-size:1.1em;overflow-wrap:anywhere}}h2{{font-size:1.2em;margin-top:28px}}.ans{{font-size:1.4em}}
 .ctl button{{font-size:1.1em;margin:0 3px;padding:6px 12px;border:1px solid #c00;border-radius:6px;background:#fff;color:#c00;cursor:pointer}}
 #mv{{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;padding:0;list-style:none;color:#999}}#mv li{{margin:0}}#mv .done{{color:#222}}#mv .cur{{color:#c00;font-weight:bold}}</style></head><body>
 <header><img src="{root}logos/labo.png" alt="{CLUB}"><img src="{root}logos/jaist.png" alt="JAIST" style="height:28px"></header>

@@ -1,0 +1,40 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>No.5 一様乱数の和 | らぼらとらい</title>
+<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#222;background:#fff}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px}header img{height:56px}
+img{max-width:100%;height:auto}img[src$=".svg"]{display:block;width:min(100%,360px);margin:16px auto}a{color:#c00}.meta{color:#666}
+li{margin:12px 0}summary{display:inline-block;margin:24px 0 12px;padding:12px 24px;border-radius:8px;background:#c00;color:#fff;font-weight:bold;cursor:pointer;list-style:none}summary::-webkit-details-marker{display:none}details[open] summary{background:#888}ul{list-style:none;padding:0}
+#bd{display:block;width:min(100%,420px);margin:16px auto;user-select:none}#bd .hit{cursor:pointer}#st,.ctl,.ans,.eq{text-align:center}.eq{font-size:1.1em;overflow-wrap:anywhere}h2{font-size:1.2em;margin-top:28px}.ans{font-size:1.4em}
+.ctl button{font-size:1.1em;margin:0 3px;padding:6px 12px;border:1px solid #c00;border-radius:6px;background:#fff;color:#c00;cursor:pointer}
+#mv{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;padding:0;list-style:none;color:#999}#mv li{margin:0}#mv .done{color:#222}#mv .cur{color:#c00;font-weight:bold}</style></head><body>
+<header><img src="../logos/labo.png" alt="らぼらとらい"><img src="../logos/jaist.png" alt="JAIST" style="height:28px"></header>
+<h1>No.5 一様乱数の和</h1>
+<p class="meta">2026-10-21 ・ 確率</p>
+<p>区間 [0,1] の一様乱数を 1 つずつ足していき、和が初めて 1 を超えたら止める。足した乱数の個数の期待値はいくらか。</p><p lang="en">Add random numbers drawn independently and uniformly from [0,1] one at a time, and stop as soon as the sum exceeds 1. What is the expected number of random numbers added?</p><img src="../img/5-q.svg" alt="No.5 の問題">
+
+<details><summary>Answer</summary>
+<p class="ans"><b><i>e</i> = 2.71828…</b></p>
+<p lang="en">The expected number is <i>e</i>.</p>
+<h2>解説</h2>
+<p>足した個数を <i>N</i> とします。「<i>n</i> 個足してもまだ止まらない」のは「<i>n</i> 個の和が 1 以下」のときなので</p>
+<p class="eq"><i>P</i>(<i>N</i> &gt; <i>n</i>) = <i>P</i>(<i>U</i><sub>1</sub> + … + <i>U</i><sub><i>n</i></sub> ≤ 1)</p>
+<p>この確率は、<i>n</i> 次元の立方体のうち和が 1 以下の部分の体積です。<i>n</i> = 2 なら三角形で 1/2、<i>n</i> = 3 なら三角錐で 1/6。</p>
+<img src="../img/5-a.svg" alt="n=2 の三角形（面積 1/2）と n=3 の三角錐（体積 1/6）">
+<p>一般の <i>n</i> では、部分和 <i>y<sub>k</sub></i> = <i>U</i><sub>1</sub> + … + <i>U<sub>k</sub></i> に置きかえると（体積は変わらない）、条件は 0 ≤ <i>y</i><sub>1</sub> ≤ <i>y</i><sub>2</sub> ≤ … ≤ <i>y<sub>n</sub></i> ≤ 1 になります。[0,1] の <i>n</i> 個の数の並び方 <i>n</i>! 通りはどれも同じ確率なので、小さい順に並ぶ確率は 1/<i>n</i>!。</p>
+<p class="eq"><i>P</i>(<i>N</i> &gt; <i>n</i>) = 1/<i>n</i>!</p>
+<p>0 以上の整数をとる確率変数では <i>E</i>[<i>N</i>] = Σ<sub><i>n</i>≥0</sub> <i>P</i>(<i>N</i> &gt; <i>n</i>) なので</p>
+<p class="eq"><i>E</i>[<i>N</i>] = 1/0! + 1/1! + 1/2! + 1/3! + … = <i>e</i></p>
+<p>おまけ: <i>P</i>(<i>N</i> = <i>n</i>) = 1/(<i>n</i>−1)! − 1/<i>n</i>! = (<i>n</i>−1)/<i>n</i>!。2 個で止まる確率は 1/2、3 個は 1/3、4 個は 1/8。</p>
+<h2>試してみる</h2>
+<p class="ctl"><button id="one">1 回</button><button id="many">1000 回</button><button id="rs">リセット</button></p>
+<p id="last" class="eq"></p>
+<p id="avg" class="eq" aria-live="polite"></p>
+</details>
+<script>
+let n=0, tot=0;
+function run(){let s=0,u=[];while(s<=1){const x=Math.random();u.push(x);s+=x;}n++;tot+=u.length;return u;}
+function show(u){if(u)last.textContent=u.map(x=>x.toFixed(3)).join(' + ')+' = '+u.reduce((a,b)=>a+b).toFixed(3)+'  →  '+u.length+' 個';
+avg.textContent=n?`${n} 回の平均: ${(tot/n).toFixed(4)}（e = 2.7183）`:'';}
+one.onclick=()=>show(run()); many.onclick=()=>{let u;for(let i=0;i<1000;i++)u=run();show(u);}; rs.onclick=()=>{n=tot=0;last.textContent='';show();};
+</script>
+<p><a href="../">過去の問題一覧へ</a></p></body></html>
