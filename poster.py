@@ -5,7 +5,7 @@
 # 使い方: issues.json に {"no": 回, "title": "虫食い算", "problem": 問題番号, "date": "YYYY-MM-DD"} を足してから
 #         uv run poster.py 3    → posters/第3回.pdf と 3/index.html、一覧の index.html
 #         uv run poster.py      → 全部の回を作り直す
-import json, os, re, subprocess, sys, html, segno
+import itertools, json, os, re, subprocess, sys, html, segno
 from make import P, pic, width, layout, OPN, H
 
 URL = 'https://sora3141.github.io/labo-quiz/'
@@ -43,7 +43,7 @@ def svg(name, p, ans):  # 問題・答えの図を SVG に
 
 def svgtex(name, code):  # TikZ の図を SVG に
     # standalone.cls が無いので、図の箱の大きさにページを合わせて直接出す
-    pdf = tex(name, r'''\documentclass{article}\usepackage{tikz}\begin{document}\sffamily
+    pdf = tex(name, r'''\documentclass{article}\usepackage{luatexja,tikz}\begin{document}\sffamily
 \setbox0\hbox{\kern4pt\vbox{\kern4pt\hbox{%s}\kern4pt}\kern4pt}
 \pagewidth=\wd0 \pageheight=\dimexpr\ht0+\dp0\relax \hoffset=-1in \voffset=-1in \shipout\box0
 \end{document}''' % code)
@@ -151,6 +151,68 @@ avg.textContent=n?`${{n}} 回の平均: ${{(tot/n).toFixed(4)}}（e = 2.7183）`
 one.onclick=()=>show(run()); many.onclick=()=>{{let u;for(let i=0;i<1000;i++)u=run();show(u);}}; rs.onclick=()=>{{n=tot=0;last.textContent='';show();}};
 </script>'''
 
+# ひとり UNO の回（"kind": "uno"）。出し切る順番の数を問う（2 枚の青 3 は区別しない、逆順は別に数える）
+UNO_HAND = 'R3 B2 B3 B3 B4 G2 G4 Y1 Y3'.split()
+UNO_ALL = sorted({p for p in itertools.permutations(UNO_HAND) if all(a[0] == b[0] or a[1] == b[1] for a, b in zip(p, p[1:]))})
+assert len(UNO_ALL) == 28
+UNO_COL = {'R': ('赤', 'red!75!black', '#bf0000'), 'B': ('青', 'blue!70!cyan!80!black', '#003dcc'),
+           'G': ('緑', 'green!50!black', '#008000'), 'Y': ('黄', 'yellow!85!orange', '#fde203')}
+UNO_RULE = ('下の 9 枚の手札を 1 枚ずつ場に出していく。最初の 1 枚は何でもよいが、2 枚目からは直前に出したカードと'
+            '色か数字が同じカードしか出せない。手札を全部出し切る順番は何通りあるか。',
+            'Play the nine cards below one at a time. The first card can be any card; after that, each card must match '
+            'the previous one in color or number. In how many orders can you play the whole hand?')
+
+def cards(unit):  # 手札の図（色の名前も下に書く。白黒で印刷しても分かるように）
+    t = ''
+    for k, c in enumerate(UNO_HAND):
+        x = k * 1.15; name, col, _ = UNO_COL[c[0]]
+        t += (r'\filldraw[fill=%s,draw=black,line width=.8pt,rounded corners=1.2mm] (%.2f,0) rectangle +(1,1.5);'
+              r'\filldraw[fill=white,draw=black,line width=.5pt,rotate around={30:(%.2f,.75)}] (%.2f,.75) ellipse (.36 and .58);'
+              r'\node[font=\bfseries\fontsize{%d}{%d}\selectfont] at (%.2f,.75) {%s};\node at (%.2f,-.3) {%s};'
+              % (col, x, x + .5, x + .5, round(unit * 1.5), round(unit * 1.5), x + .5, c[1], x + .5, name))
+    return r'\begin{tikzpicture}[x=%smm,y=%smm]%s\end{tikzpicture}' % (unit, unit, t)
+
+def uno_web(no):  # 答えのページ: 数え方の解説と 14 通りの一覧、カードを押して自分で探す遊び
+    cs = {c: v[2] for c, v in UNO_COL.items()}; nm = {c: v[0] for c, v in UNO_COL.items()}
+    row = lambda p: '<li>' + '　'.join(nm[c[0]] + c[1] for c in p) + '</li>'
+    y1 = [p for p in UNO_ALL if p[0] == 'Y1']
+    red = [p for p in y1 if p[2] == 'R3']; blue = [p for p in y1 if p[2] == 'B3']
+    return f'''
+<details><summary>Answer</summary>
+<p class="ans"><b>{len(UNO_ALL)} 通り</b></p>
+<p>2 枚の青 3 を区別すると、入れかえの分が 2 倍になって {2 * len(UNO_ALL)} 通りです。</p>
+<p lang="en"><b>{len(UNO_ALL)}</b> orders ({2 * len(UNO_ALL)} if the two blue 3s are told apart).</p>
+<h2>解説</h2>
+<p>カードを点、続けて出せる 2 枚を線で結ぶと、「全部出し切る」は「すべての点を 1 回ずつ通る道（ハミルトン路）」になります。点が増えると探すのも数えるのも一気に難しくなる、有名な難問です。この手札は、カードのつながり方に目をつけると手で数えられます。</p>
+<p><b>1. 黄 1 は端。</b>黄 1 とつながるのは黄 3 だけ（ほかに 1 も黄色もない）。だから黄 1 は最初か最後で、その隣は黄 3。黄 1 から始まる順番を数えて 2 倍すればよい。</p>
+<p><b>2. 緑 2 と緑 4 は必ず隣どうし。</b>緑 2 は緑 4 と青 2、緑 4 は緑 2 と青 4 としかつながらない。</p>
+<p><b>3. 赤 3 は 3 としかつながらない。</b>黄 3 のすぐ次に出すか、青 3 の隣に置くしかない。</p>
+<p>黄 1・黄 3 のあと、3 枚目が赤 3 か青 3 かで分けます。</p>
+<p><b>3 枚目が赤 3：{len(red)} 通り</b></p><ol class="seq">{''.join(map(row, red))}</ol>
+<p><b>3 枚目が青 3：{len(blue)} 通り</b>（赤 3 は 2 枚の青 3 の間か、いちばん最後）</p><ol class="seq">{''.join(map(row, blue))}</ol>
+<p class="eq">（{len(red)} + {len(blue)}）× 2 = {len(UNO_ALL)}</p>
+<p>× 2 は、それぞれを逆から出す順番（黄 1 で終わる）の分です。</p>
+<h2>やってみる</h2>
+<div id="hand" class="uno"></div>
+<p id="st" aria-live="polite"></p>
+<div id="pile" class="uno"></div>
+<p class="ctl"><button id="rs">やり直す</button></p>
+<p id="fd" class="eq"></p>
+</details>
+<script>
+const H={UNO_HAND!r}, C={cs!r}, NM={nm!r}, ALL={len(UNO_ALL)}, found=new Set();
+let used=[], seq=[];
+const ok=i=>!used[i]&&(!seq.length||H[seq.at(-1)][0]===H[i][0]||H[seq.at(-1)][1]===H[i][1]);
+const card=(i,b)=>`<button style="background:${{C[H[i][0]]}}" aria-label="${{NM[H[i][0]]}} ${{H[i][1]}}" data-n="${{NM[H[i][0]]}}" ${{b?'':'disabled'}} data-i="${{i}}"><span>${{H[i][1]}}</span></button>`;
+function draw(){{hand.innerHTML=H.map((_,i)=>used[i]?'':card(i,ok(i))).join('');pile.innerHTML=seq.map(i=>card(i,false)).join('');
+const left=H.length-seq.length,key=seq.map(i=>H[i]).join(' ');let msg=`残り ${{left}} 枚。出せるカードを押してください`;
+if(!left){{msg=found.has(key)?'出し切った！（もう見つけた順番）':'出し切った！ 新しい順番です';found.add(key);}}else if(!H.some((_,i)=>ok(i)))msg=`残り ${{left}} 枚。もう出せません`;
+st.textContent=msg;fd.textContent=`見つけた順番: ${{found.size}} / ${{ALL}}`;}}
+hand.onclick=e=>{{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i;used[i]=true;seq.push(i);draw();}};
+rs.onclick=()=>{{used=[];seq=[];draw();}};
+draw();
+</script>'''
+
 def crop(name):  # ロゴの描画部分だけを切り抜く（logos/ の元画像はそのまま）
     from PIL import Image
     im = Image.open(f'logos/{name}.png').convert('RGBA')
@@ -159,14 +221,16 @@ def crop(name):  # ロゴの描画部分だけを切り抜く（logos/ の元画
     return f'build/{name}.png'
 
 def kind(i):  # 一覧などに出す種類の名前
-    return {'othello': 'オセロ', 'uniform': '確率'}.get(i.get('kind')) or OPN[P[i['problem']]['op']]
+    return {'othello': 'オセロ', 'uniform': '確率', 'uno': 'UNO'}.get(i.get('kind')) or OPN[P[i['problem']]['op']]
 
 def poster(i):
-    no = i['no']; url = f'{URL}{no}/'; oth = i.get('kind') == 'othello'; unf = i.get('kind') == 'uniform'
+    no = i['no']; url = f'{URL}{no}/'; oth = i.get('kind') == 'othello'; unf = i.get('kind') == 'uniform'; uno = i.get('kind') == 'uno'
     qr = segno.make(url, error='m'); qr.save(f'build/qr-{no}.pdf', scale=10, border=4)  # まわりの白 4 マスは規格で要る
     qz = 40 * 4 / qr.symbol_size(border=4)[0]  # 白 4 マスの幅（mm）。黒い部分の端を余白線にそろえるのに使う
     if oth:
         ja, en = OTH_RULE; s, fig = 1, board(13)  # 盤は 1 マス 13mm（幅 10.4cm）
+    elif uno:
+        ja, en = UNO_RULE; s, fig = 1, cards(15)  # カード 1 枚 15mm（9 枚で幅 16cm）
     elif unf:
         ja, en = UNI_RULE; fig = None  # 図は載せない（文だけで足りる）
     else:
@@ -196,9 +260,10 @@ def poster(i):
 \end{document}''' % (no, i['title'], qz, no, qz, qz, mid, crop('labo'), URL, crop('jaist'))
     os.replace(tex(f'poster-{no}', body), f'posters/第{no}回.pdf')
     if oth: svgtex(f'{no}-q', board(7))
+    elif uno: svgtex(f'{no}-q', cards(9))
     elif unf: svgtex(f'{no}-a', simplex(30))
     else: svg(f'{no}-q', p, False); svg(f'{no}-a', p, True)
-    ans = othello_web(no) if oth else uniform_web(no) if unf else f'<details><summary>Answer</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>'
+    ans = othello_web(no) if oth else uno_web(no) if uno else uniform_web(no) if unf else f'<details><summary>Answer</summary><img src="../img/{no}-a.svg" alt="No.{no} の答え"></details>'
     os.makedirs(str(no), exist_ok=True)
     open(f'{no}/index.html', 'w').write(page(f'No.{no} {i["title"]}', f'''
 <p class="meta">{i["date"]} ・ {kind(i)}</p>
@@ -215,7 +280,12 @@ img{{max-width:100%;height:auto}}img[src$=".svg"]{{display:block;width:min(100%,
 li{{margin:12px 0}}summary{{display:inline-block;margin:24px 0 12px;padding:12px 24px;border-radius:8px;background:#c00;color:#fff;font-weight:bold;cursor:pointer;list-style:none}}summary::-webkit-details-marker{{display:none}}details[open] summary{{background:#888}}ul{{list-style:none;padding:0}}
 #bd{{display:block;width:min(100%,420px);margin:16px auto;user-select:none}}#bd .hit{{cursor:pointer}}#st,.ctl,.ans,.eq{{text-align:center}}.eq{{font-size:1.1em;overflow-wrap:anywhere}}h2{{font-size:1.2em;margin-top:28px}}.ans{{font-size:1.4em}}
 .ctl button{{font-size:1.1em;margin:0 3px;padding:6px 12px;border:1px solid #c00;border-radius:6px;background:#fff;color:#c00;cursor:pointer}}
-#mv{{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;padding:0;list-style:none;color:#999}}#mv li{{margin:0}}#mv .done{{color:#222}}#mv .cur{{color:#c00;font-weight:bold}}</style></head><body>
+#mv{{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;padding:0;list-style:none;color:#999}}#mv li{{margin:0}}#mv .done{{color:#222}}#mv .cur{{color:#c00;font-weight:bold}}
+.uno{{display:flex;flex-wrap:wrap;gap:24px 6px;justify-content:center;min-height:96px;margin:12px 0}}.seq{{padding-left:2em}}.seq li{{margin:4px 0}}#pile{{border-top:1px dashed #aaa;padding-top:12px}}
+.uno button{{position:relative;width:48px;height:72px;border:2px solid #000;border-radius:6px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}}.uno button:disabled{{cursor:default;opacity:.35}}#pile button:disabled{{opacity:1}}
+.uno button::before{{content:"";position:absolute;width:35px;height:56px;border:1px solid #000;border-radius:50%;background:#fff;transform:rotate(-30deg)}}
+.uno button::after{{content:attr(data-n);position:absolute;top:100%;margin-top:3px;font-size:13px;color:#222}}
+.uno span{{position:relative;font:bold 26px system-ui,sans-serif;color:#000}}</style></head><body>
 <header><img src="{root}logos/labo.png" alt="{CLUB}"><img src="{root}logos/jaist.png" alt="JAIST" style="height:28px"></header>
 <h1>{title}</h1>{body}</body></html>'''
 

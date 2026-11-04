@@ -9,7 +9,7 @@
 3. `uv run poster.py <回>` → `posters/第<回>回.pdf`（印刷用）、`<回>/index.html`（QR の先の答え）、`index.html`（一覧）
 4. commit して push（Pages に出てから貼る）
 
-虫食い算でない回は `"kind"` で種類を書く（`"othello"` はオセロ、`"uniform"` は一様乱数の和）。種類ごとの図と答えのページは `poster.py` にある。
+虫食い算でない回は `"kind"` で種類を書く（`"othello"` はオセロ、`"uniform"` は一様乱数の和、`"uno"` はひとりUNO）。種類ごとの図と答えのページは `poster.py` にある。
 
 問題を足すときは `problems.json` の末尾に足し、`python3 solver.py <番号>` で Lv を測る。
 横書きの式（`"op": "x"`、例 `"rows": "B3×CE×D6×F8=74A51920"`、見せるマスは `"show": [何文字目]`）はソルバーで測れないので、一覧の PDF には入らない。

@@ -1,0 +1,54 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>No.6 ひとりUNO | らぼらとらい</title>
+<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#222;background:#fff}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px}header img{height:56px}
+img{max-width:100%;height:auto}img[src$=".svg"]{display:block;width:min(100%,360px);margin:16px auto}a{color:#c00}.meta{color:#666}
+li{margin:12px 0}summary{display:inline-block;margin:24px 0 12px;padding:12px 24px;border-radius:8px;background:#c00;color:#fff;font-weight:bold;cursor:pointer;list-style:none}summary::-webkit-details-marker{display:none}details[open] summary{background:#888}ul{list-style:none;padding:0}
+#bd{display:block;width:min(100%,420px);margin:16px auto;user-select:none}#bd .hit{cursor:pointer}#st,.ctl,.ans,.eq{text-align:center}.eq{font-size:1.1em;overflow-wrap:anywhere}h2{font-size:1.2em;margin-top:28px}.ans{font-size:1.4em}
+.ctl button{font-size:1.1em;margin:0 3px;padding:6px 12px;border:1px solid #c00;border-radius:6px;background:#fff;color:#c00;cursor:pointer}
+#mv{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;padding:0;list-style:none;color:#999}#mv li{margin:0}#mv .done{color:#222}#mv .cur{color:#c00;font-weight:bold}
+.uno{display:flex;flex-wrap:wrap;gap:24px 6px;justify-content:center;min-height:96px;margin:12px 0}.seq{padding-left:2em}.seq li{margin:4px 0}#pile{border-top:1px dashed #aaa;padding-top:12px}
+.uno button{position:relative;width:48px;height:72px;border:2px solid #000;border-radius:6px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}.uno button:disabled{cursor:default;opacity:.35}#pile button:disabled{opacity:1}
+.uno button::before{content:"";position:absolute;width:35px;height:56px;border:1px solid #000;border-radius:50%;background:#fff;transform:rotate(-30deg)}
+.uno button::after{content:attr(data-n);position:absolute;top:100%;margin-top:3px;font-size:13px;color:#222}
+.uno span{position:relative;font:bold 26px system-ui,sans-serif;color:#000}</style></head><body>
+<header><img src="../logos/labo.png" alt="らぼらとらい"><img src="../logos/jaist.png" alt="JAIST" style="height:28px"></header>
+<h1>No.6 ひとりUNO</h1>
+<p class="meta">2026-11-04 ・ UNO</p>
+<p>下の 9 枚の手札を 1 枚ずつ場に出していく。最初の 1 枚は何でもよいが、2 枚目からは直前に出したカードと色か数字が同じカードしか出せない。手札を全部出し切る順番は何通りあるか。</p><p lang="en">Play the nine cards below one at a time. The first card can be any card; after that, each card must match the previous one in color or number. In how many orders can you play the whole hand?</p><img src="../img/6-q.svg" alt="No.6 の問題">
+
+<details><summary>Answer</summary>
+<p class="ans"><b>28 通り</b></p>
+<p>2 枚の青 3 を区別すると、入れかえの分が 2 倍になって 56 通りです。</p>
+<p lang="en"><b>28</b> orders (56 if the two blue 3s are told apart).</p>
+<h2>解説</h2>
+<p>カードを点、続けて出せる 2 枚を線で結ぶと、「全部出し切る」は「すべての点を 1 回ずつ通る道（ハミルトン路）」になります。点が増えると探すのも数えるのも一気に難しくなる、有名な難問です。この手札は、カードのつながり方に目をつけると手で数えられます。</p>
+<p><b>1. 黄 1 は端。</b>黄 1 とつながるのは黄 3 だけ（ほかに 1 も黄色もない）。だから黄 1 は最初か最後で、その隣は黄 3。黄 1 から始まる順番を数えて 2 倍すればよい。</p>
+<p><b>2. 緑 2 と緑 4 は必ず隣どうし。</b>緑 2 は緑 4 と青 2、緑 4 は緑 2 と青 4 としかつながらない。</p>
+<p><b>3. 赤 3 は 3 としかつながらない。</b>黄 3 のすぐ次に出すか、青 3 の隣に置くしかない。</p>
+<p>黄 1・黄 3 のあと、3 枚目が赤 3 か青 3 かで分けます。</p>
+<p><b>3 枚目が赤 3：8 通り</b></p><ol class="seq"><li>黄1　黄3　赤3　青3　青2　青3　青4　緑4　緑2</li><li>黄1　黄3　赤3　青3　青2　緑2　緑4　青4　青3</li><li>黄1　黄3　赤3　青3　青3　青2　青4　緑4　緑2</li><li>黄1　黄3　赤3　青3　青3　青2　緑2　緑4　青4</li><li>黄1　黄3　赤3　青3　青3　青4　青2　緑2　緑4</li><li>黄1　黄3　赤3　青3　青3　青4　緑4　緑2　青2</li><li>黄1　黄3　赤3　青3　青4　青3　青2　緑2　緑4</li><li>黄1　黄3　赤3　青3　青4　緑4　緑2　青2　青3</li></ol>
+<p><b>3 枚目が青 3：6 通り</b>（赤 3 は 2 枚の青 3 の間か、いちばん最後）</p><ol class="seq"><li>黄1　黄3　青3　青2　緑2　緑4　青4　青3　赤3</li><li>黄1　黄3　青3　青4　緑4　緑2　青2　青3　赤3</li><li>黄1　黄3　青3　赤3　青3　青2　青4　緑4　緑2</li><li>黄1　黄3　青3　赤3　青3　青2　緑2　緑4　青4</li><li>黄1　黄3　青3　赤3　青3　青4　青2　緑2　緑4</li><li>黄1　黄3　青3　赤3　青3　青4　緑4　緑2　青2</li></ol>
+<p class="eq">（8 + 6）× 2 = 28</p>
+<p>× 2 は、それぞれを逆から出す順番（黄 1 で終わる）の分です。</p>
+<h2>やってみる</h2>
+<div id="hand" class="uno"></div>
+<p id="st" aria-live="polite"></p>
+<div id="pile" class="uno"></div>
+<p class="ctl"><button id="rs">やり直す</button></p>
+<p id="fd" class="eq"></p>
+</details>
+<script>
+const H=['R3', 'B2', 'B3', 'B3', 'B4', 'G2', 'G4', 'Y1', 'Y3'], C={'R': '#bf0000', 'B': '#003dcc', 'G': '#008000', 'Y': '#fde203'}, NM={'R': '赤', 'B': '青', 'G': '緑', 'Y': '黄'}, ALL=28, found=new Set();
+let used=[], seq=[];
+const ok=i=>!used[i]&&(!seq.length||H[seq.at(-1)][0]===H[i][0]||H[seq.at(-1)][1]===H[i][1]);
+const card=(i,b)=>`<button style="background:${C[H[i][0]]}" aria-label="${NM[H[i][0]]} ${H[i][1]}" data-n="${NM[H[i][0]]}" ${b?'':'disabled'} data-i="${i}"><span>${H[i][1]}</span></button>`;
+function draw(){hand.innerHTML=H.map((_,i)=>used[i]?'':card(i,ok(i))).join('');pile.innerHTML=seq.map(i=>card(i,false)).join('');
+const left=H.length-seq.length,key=seq.map(i=>H[i]).join(' ');let msg=`残り ${left} 枚。出せるカードを押してください`;
+if(!left){msg=found.has(key)?'出し切った！（もう見つけた順番）':'出し切った！ 新しい順番です';found.add(key);}else if(!H.some((_,i)=>ok(i)))msg=`残り ${left} 枚。もう出せません`;
+st.textContent=msg;fd.textContent=`見つけた順番: ${found.size} / ${ALL}`;}
+hand.onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i;used[i]=true;seq.push(i);draw();};
+rs.onclick=()=>{used=[];seq=[];draw();};
+draw();
+</script>
+<p><a href="../">過去の問題一覧へ</a></p></body></html>
