@@ -7,7 +7,7 @@ li{margin:12px 0}summary{display:inline-block;margin:24px 0 12px;padding:12px 24
 #bd{display:block;width:min(100%,420px);margin:16px auto;user-select:none}#bd .hit{cursor:pointer}#st,.ctl,.ans,.eq{text-align:center}.eq{font-size:1.1em;overflow-wrap:anywhere}h2{font-size:1.2em;margin-top:28px}.ans{font-size:1.4em}
 .ctl button{font-size:1.1em;margin:0 3px;padding:6px 12px;border:1px solid #c00;border-radius:6px;background:#fff;color:#c00;cursor:pointer}
 #mv{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;padding:0;list-style:none;color:#999}#mv li{margin:0}#mv .done{color:#222}#mv .cur{color:#c00;font-weight:bold}
-.uno{display:flex;flex-wrap:wrap;gap:24px 6px;justify-content:center;min-height:96px;margin:12px 0}.seq{padding-left:2em}.seq li{margin:4px 0}#pile{border-top:1px dashed #aaa;padding-top:12px}
+.uno{display:flex;flex-wrap:wrap;gap:24px 6px;justify-content:center;min-height:96px;margin:12px 0}.how{border:1px solid #999;border-radius:8px;padding:10px 16px;margin:16px 0}.how ul{list-style:disc;padding-left:1.4em;margin:6px 0}.how li{margin:6px 0}.how span{color:#666;font-size:.9em}.seq{padding-left:2em}.seq li{margin:4px 0}#pile{border-top:1px dashed #aaa;padding-top:12px}
 .uno button{position:relative;width:48px;height:72px;border:2px solid #000;border-radius:6px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}.uno button:disabled{cursor:default;opacity:.35}#pile button:disabled{opacity:1}
 .uno button::before{content:"";position:absolute;width:35px;height:56px;border:1px solid #000;border-radius:50%;background:#fff;transform:rotate(-30deg)}
 .uno button::after{content:attr(data-n);position:absolute;top:100%;margin-top:3px;font-size:13px;color:#222}
@@ -15,7 +15,7 @@ li{margin:12px 0}summary{display:inline-block;margin:24px 0 12px;padding:12px 24
 <header><img src="../logos/labo.png" alt="らぼらとらい"><img src="../logos/jaist.png" alt="JAIST" style="height:28px"></header>
 <h1>No.6 ひとりUNO</h1>
 <p class="meta">2026-11-04 ・ UNO</p>
-<p>下の 9 枚の手札を 1 枚ずつ場に出していく。最初の 1 枚は何でもよいが、2 枚目からは直前に出したカードと色か数字が同じカードしか出せない。手札を全部出し切る順番は何通りあるか。</p><p lang="en">Play the nine cards below one at a time. The first card can be any card; after that, each card must match the previous one in color or number. In how many orders can you play the whole hand?</p><img src="../img/6-q.svg" alt="No.6 の問題">
+<div class="how"><b>ひとりUNO のルール</b><ul><li>手札を 1 枚ずつ場に出していく。<br><span lang="en">Play your cards one at a time.</span></li><li>最初の 1 枚は何を出してもよい。<br><span lang="en">The first card can be any card.</span></li><li>2 枚目からは、直前に出したカードと色か数字が同じカードだけ出せる。<br><span lang="en">After that, each card must match the previous one in color or number.</span></li><li>手札を全部出し切ったら上がり。<br><span lang="en">You finish when your hand is empty.</span></li></ul></div><p>下の 9 枚の手札を、このルールで全部出し切る順番は何通りあるか。</p><p lang="en">In how many orders can you play all nine cards below by these rules?</p><img src="../img/6-q.svg" alt="No.6 の問題">
 
 <details><summary>Answer</summary>
 <p class="ans"><b>28 通り</b></p>

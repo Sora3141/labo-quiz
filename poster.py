@@ -157,10 +157,12 @@ UNO_ALL = sorted({p for p in itertools.permutations(UNO_HAND) if all(a[0] == b[0
 assert len(UNO_ALL) == 28
 UNO_COL = {'R': ('赤', 'red!75!black', '#bf0000'), 'B': ('青', 'blue!70!cyan!80!black', '#003dcc'),
            'G': ('緑', 'green!50!black', '#008000'), 'Y': ('黄', 'yellow!85!orange', '#fde203')}
-UNO_RULE = ('下の 9 枚の手札を 1 枚ずつ場に出していく。最初の 1 枚は何でもよいが、2 枚目からは直前に出したカードと'
-            '色か数字が同じカードしか出せない。手札を全部出し切る順番は何通りあるか。',
-            'Play the nine cards below one at a time. The first card can be any card; after that, each card must match '
-            'the previous one in color or number. In how many orders can you play the whole hand?')
+UNO_HOW = [('手札を 1 枚ずつ場に出していく。', 'Play your cards one at a time.'),
+           ('最初の 1 枚は何を出してもよい。', 'The first card can be any card.'),
+           ('2 枚目からは、直前に出したカードと色か数字が同じカードだけ出せる。', 'After that, each card must match the previous one in color or number.'),
+           ('手札を全部出し切ったら上がり。', 'You finish when your hand is empty.')]
+UNO_RULE = ('下の 9 枚の手札を、このルールで全部出し切る順番は何通りあるか。',
+            'In how many orders can you play all nine cards below by these rules?')
 
 def cards(unit):  # 手札の図（色の名前も下に書く。白黒で印刷しても分かるように）
     t = ''
@@ -171,6 +173,9 @@ def cards(unit):  # 手札の図（色の名前も下に書く。白黒で印刷
               r'\node[font=\bfseries\fontsize{%d}{%d}\selectfont] at (%.2f,.75) {%s};\node at (%.2f,-.3) {%s};'
               % (col, x, x + .5, x + .5, round(unit * 1.5), round(unit * 1.5), x + .5, c[1], x + .5, name))
     return r'\begin{tikzpicture}[x=%smm,y=%smm]%s\end{tikzpicture}' % (unit, unit, t)
+
+def uno_how():  # Web の問題の上に出すルールの枠
+    return '<div class="how"><b>ひとりUNO のルール</b><ul>' + ''.join(f'<li>{j}<br><span lang="en">{e}</span></li>' for j, e in UNO_HOW) + '</ul></div>'
 
 def uno_web(no):  # 答えのページ: 数え方の解説と 14 通りの一覧、カードを押して自分で探す遊び
     cs = {c: v[2] for c, v in UNO_COL.items()}; nm = {c: v[0] for c, v in UNO_COL.items()}
@@ -237,6 +242,9 @@ def poster(i):
         p = P[i['problem']]; ja, en = rule(p); fig = pic(p, False, 1)
         rows = max(r for _, r, _ in layout(p)[0]) + 1
         s = min(16 / width(p), 12 / (rows * H))  # 図全体（× も）を幅 16cm・高さ 12cm に収まるまで拡大（説明文が 6 行でも 1 枚に入る高さ）
+    if uno:  # ルールを枠で囲んだ箇条書きにして、問いの文の上に出す
+        ja = (r'{\setlength{\fboxsep}{4mm}\fbox{\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule}\textbf{ひとりUNO のルール}'
+              r'\begin{itemize}\setlength{\itemsep}{2pt}%s\end{itemize}\end{minipage}}}\par\bigskip ' % ''.join(r'\item %s\\{\small %s}' % h for h in UNO_HOW) + ja)
     mid = (r'{\large %s\par\medskip %s\par}\vspace{8mm}\begin{center}\scalebox{%.2f}{%s}\end{center}' % (ja, en, s, fig) if fig else
            r'{\LARGE %s\par\bigskip %s\par}' % (ja, en))  # 図のない回は文を大きくする
     body = r'''\documentclass[a4paper]{ltjsarticle}
@@ -267,7 +275,7 @@ def poster(i):
     os.makedirs(str(no), exist_ok=True)
     open(f'{no}/index.html', 'w').write(page(f'No.{no} {i["title"]}', f'''
 <p class="meta">{i["date"]} ・ {kind(i)}</p>
-<p>{uni(ja)}</p><p lang="en">{uni(en)}</p>{'' if unf else f'<img src="../img/{no}-q.svg" alt="No.{no} の問題">'}
+{uno_how() if uno else ''}<p>{uni(UNO_RULE[0] if uno else ja)}</p><p lang="en">{uni(en)}</p>{'' if unf else f'<img src="../img/{no}-q.svg" alt="No.{no} の問題">'}
 {ans}
 <p><a href="../">過去の問題一覧へ</a></p>''', '../'))
 
@@ -281,7 +289,7 @@ li{{margin:12px 0}}summary{{display:inline-block;margin:24px 0 12px;padding:12px
 #bd{{display:block;width:min(100%,420px);margin:16px auto;user-select:none}}#bd .hit{{cursor:pointer}}#st,.ctl,.ans,.eq{{text-align:center}}.eq{{font-size:1.1em;overflow-wrap:anywhere}}h2{{font-size:1.2em;margin-top:28px}}.ans{{font-size:1.4em}}
 .ctl button{{font-size:1.1em;margin:0 3px;padding:6px 12px;border:1px solid #c00;border-radius:6px;background:#fff;color:#c00;cursor:pointer}}
 #mv{{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;padding:0;list-style:none;color:#999}}#mv li{{margin:0}}#mv .done{{color:#222}}#mv .cur{{color:#c00;font-weight:bold}}
-.uno{{display:flex;flex-wrap:wrap;gap:24px 6px;justify-content:center;min-height:96px;margin:12px 0}}.seq{{padding-left:2em}}.seq li{{margin:4px 0}}#pile{{border-top:1px dashed #aaa;padding-top:12px}}
+.uno{{display:flex;flex-wrap:wrap;gap:24px 6px;justify-content:center;min-height:96px;margin:12px 0}}.how{{border:1px solid #999;border-radius:8px;padding:10px 16px;margin:16px 0}}.how ul{{list-style:disc;padding-left:1.4em;margin:6px 0}}.how li{{margin:6px 0}}.how span{{color:#666;font-size:.9em}}.seq{{padding-left:2em}}.seq li{{margin:4px 0}}#pile{{border-top:1px dashed #aaa;padding-top:12px}}
 .uno button{{position:relative;width:48px;height:72px;border:2px solid #000;border-radius:6px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}}.uno button:disabled{{cursor:default;opacity:.35}}#pile button:disabled{{opacity:1}}
 .uno button::before{{content:"";position:absolute;width:35px;height:56px;border:1px solid #000;border-radius:50%;background:#fff;transform:rotate(-30deg)}}
 .uno button::after{{content:attr(data-n);position:absolute;top:100%;margin-top:3px;font-size:13px;color:#222}}
